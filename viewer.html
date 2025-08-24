@@ -3,30 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Jeansellem Viewer</title>
+  <title>Viewer</title>
   <style>
-    html,body{height:100%;margin:0}
-    #viewer{height:100vh}
+    html,body,#viewer{height:100%;margin:0}
   </style>
 </head>
 <body>
   <div id="viewer"></div>
 
-  <!-- Charge le bootstrap depuis le CDN -->
-  <script src="https://unpkg.com/@pdftron/pdfjs-express-viewer@latest/webviewer.min.js"></script>
+  <!-- charge le bootstrap depuis TON dépôt -->
+  <script src="pdfjs/webviewer.min.js"></script>
   <script>
-    // Récupère ?file=... si fourni, sinon charge un PDF local par défaut
+    const el = document.getElementById('viewer');
+    // lit ?file=... dans l’URL, sinon ouvre sample.pdf
     const params = new URLSearchParams(location.search);
-    const file = params.get('file') || '1971-sandro-adriani.pdf';
+    const file = params.get('file') || 'sample.pdf';
 
     WebViewer({
-      // IMPORTANT : on pointe le CDN pour éviter d’uploader /core et /ui
-      path: 'https://unpkg.com/@pdftron/pdfjs-express-viewer@latest',
-      licenseKey: 'WQbdx5KD5SbQkjFwosWR',  // ta clé
+      path: 'pdfjs',                         // <<< IMPORTANT : ton dossier local
+      licenseKey: 'WQbdx5KD5SbQkjFwosWR',
       initialDoc: file
-    }, document.getElementById('viewer'))
-    .then(() => console.log('Viewer prêt:', file))
-    .catch(console.error);
+    }, el);
   </script>
 </body>
 </html>
