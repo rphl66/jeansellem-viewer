@@ -1,27 +1,28 @@
 <!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Jeansellem • PDF Viewer</title>
-  <style>
-    html, body { height:100%; margin:0; }
-    #viewer { height:100vh; }
-  </style>
-</head>
-<body>
-  <div id="viewer"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jeansellem PDF Viewer</title>
+    <style>
+      html, body, #viewer { height: 100%; margin: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="viewer"></div>
 
-  <!-- Charge le bootstrap depuis le CDN (pas besoin d’uploader /core et /ui) -->
-  <script src="https://cdn.jsdelivr.net/npm/@pdftron/pdfjs-express-viewer@8.7.5/webviewer.min.js"></script>
-  <script>
-    WebViewer({
-      // Le "path" pointe vers les assets /public sur le CDN
-      path: 'https://cdn.jsdelivr.net/npm/@pdftron/pdfjs-express-viewer@8.7.5/public',
-      licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      // PDF hébergé dans ton repo GitHub Pages
-      initialDoc: './sample.pdf'
-    }, document.getElementById('viewer'));
-  </script>
-</body>
+    <!-- WebViewer depuis le CDN -->
+    <script src="https://unpkg.com/@pdftron/pdfjs-express-viewer@8.7.5/webviewer.min.js"></script>
+    <script>
+      // Permet d'ouvrir n'importe quel PDF via ?file=<URL-encode>
+      const url = new URL(location.href);
+      const file = url.searchParams.get('file') || 'sample.pdf';
+
+      WebViewer({
+        path: 'https://unpkg.com/@pdftron/pdfjs-express-viewer@8.7.5/public',
+        licenseKey: 'WQbdx5KD5SbQkjFwosWR',
+        initialDoc: file
+      }, document.getElementById('viewer'));
+    </script>
+  </body>
 </html>
