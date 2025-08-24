@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Viewer</title>
+  <style>
+    html,body { height:100%; margin:0; }
+    #viewer { height:100vh; }
+  </style>
+</head>
+<body>
+  <div id="viewer"></div>
+
+  <script src="/jeansellem/pdfjs/webviewer.min.js"></script>
+  <script>
+    // Récupère ?file=/chemin/vers/ton.pdf (sinon fallback local)
+    const params = new URLSearchParams(location.search);
+    const file   = params.get('file') || '/jeansellem/sample.pdf';
+
+    WebViewer({
+      path: '/jeansellem/pdfjs',                 // dossier qui contient /core et /ui
+      licenseKey: 'WQbdx5KD5SbQkjFwosWR',       // ta clé
+      initialDoc: file
+    }, document.getElementById('viewer')).then(instance => {
+      const { UI } = instance;
+
+      // --- Personnalisation par défaut (modifie à ta guise) ---
+      UI.setLanguage('fr');                    // langue
+      UI.setTheme('light');                    // 'dark' ou 'light'
+      UI.setFitMode(UI.FitMode.FitWidth);      // FitWidth, FitPage…
+      UI.setLayoutMode(UI.LayoutMode.Continuous); // Continuous, Single…
+
+      // Exemple : cacher certains boutons
+      UI.disableElements([
+        'printButton',
+        // 'downloadButton',
+        // 'searchButton',
+        // 'viewControlsButton',
+        // 'menuButton'
+      ]);
+
+      // Exemple : reconstruire la barre d’outils
+      UI.setHeaderItems(h => {
+        // supprime quelques items par défaut
+        ['zoomOverlayButton','viewControlsButton','searchButton'].forEach(id => h.delete(id));
+
+        // ajoute un bouton perso (icône simple texte ici)
+        h.push({
+          type: 'actionButton',
+          title: 'Aide',
+          label: 'Aide',
+          onClick: () => alert('Besoin d’aide ?')
+        });
+      });
+
+      // Tu peux charger un autre PDF dynamiquement :
+      // UI.loadDocument('/jeansellem/mon-autre.pdf');
+    }).catch(console.error);
+  </script>
+</body>
+</html>
