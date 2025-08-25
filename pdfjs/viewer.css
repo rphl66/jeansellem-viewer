@@ -1,27 +1,36 @@
 /* =========================================================
-   JEANSELLEM — PDF Viewer (custom UI skin)
-   Couleurs: cadre #e6f2fa, boutons #000
+   JEANSELLEM — PDF Viewer (custom UI skin clair)
+   Cadre #fff, boutons #fff, texte noir,
+   Fullscreen personnalisable
    ========================================================= */
 
-/* Police Overpass */
+/* Police */
 @import url('https://fonts.googleapis.com/css2?family=Overpass:wght@400;600&display=swap');
 
 /* Variables */
 :root{
-  --primary-color: #ffffff;   /* Cadre / barre du haut / fond autour du doc */
-  --secondary-color: #3a86ff; /* Accent si besoin */
-  --text-color: #111111;      /* Texte clair sur boutons */
+  --primary-color: #ffffff;   /* Fond / barre du haut / cadre */
+  --secondary-color: #3a86ff; /* Accent */
+  --text-color: #111111;      /* Texte standard */
   --muted-color: #ffffff;
 
-  --button-bg: #ffffff;       /* Boutons noirs */
-  --button-bg-hover: #ffffff; /* Survol */
-  --button-bg-active: #ffffff;
+  --btn-bg: #ffffff;          /* Boutons standards */
+  --btn-bg-hover: #f2f2f2;
+  --btn-bg-active: #3a86ff;
+  --btn-radius: 10px;
 
-  --border-radius: 10px;
+  --toolbar-gap: 12px;        /* Espacement entre boutons */
+
+  /* Fullscreen spécifique */
+  --fs-bg: #000000;           /* Fond du bouton Fullscreen */
+  --fs-fg: #ffffff;           /* Texte / icône */
+  --fs-hover: #222222;
+  --fs-active: #3a86ff;
+
   --font-family: 'Overpass', system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
 
-/* Typo globale UI */
+/* Typo globale */
 body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   font-family: var(--font-family) !important;
 }
@@ -35,35 +44,55 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   background-color: var(--primary-color) !important;
 }
 
-/* Icônes / textes */
+/* Espacement des boutons */
+.Header .Button,
+.Header [data-element="zoomDropdown"] {
+  margin: 0 calc(var(--toolbar-gap) / 2) !important;
+}
+
+/* Boutons génériques */
+.Button {
+  background: var(--btn-bg) !important;
+  color: var(--text-color) !important;
+  border-radius: var(--btn-radius) !important;
+  transition: background .2s ease;
+}
+.Button:hover { background: var(--btn-bg-hover) !important; }
+.Button.active, .Button:active {
+  background: var(--btn-bg-active) !important;
+  color: #fff !important;
+}
+
+/* Bouton fullscreen spécifique */
+.Button[data-element="myFullscreenButton"] {
+  background: var(--fs-bg) !important;
+  color: var(--fs-fg) !important;
+}
+.Button[data-element="myFullscreenButton"]:hover {
+  background: var(--fs-hover) !important;
+}
+.Button[data-element="myFullscreenButton"].active,
+.Button[data-element="myFullscreenButton"]:active {
+  background: var(--fs-active) !important;
+  color: #fff !important;
+}
+
+/* Icônes / texte */
 .Icon, .Text, .Label {
   color: var(--text-color) !important;
   fill: var(--text-color) !important;
 }
 
-/* Boutons */
-.Button {
-  background: var(--button-bg) !important;
-  color: var(--text-color) !important;
-  border-radius: var(--border-radius) !important;
-  transition: background .2s ease;
-}
-.Button:hover { background: var(--button-bg-hover) !important; }
-.Button.active, .Button:active {
-  background: var(--button-bg-active) !important;
-  color: #fff !important;
-}
-
 /* Panneaux / menus */
 .Panel, .Menu, .Popup, .Overlay, .Modal {
   background: #ffffff !important;
-  border-radius: var(--border-radius) !important;
+  border-radius: var(--btn-radius) !important;
   border: 1px solid #ffffff !important;
   color: var(--text-color) !important;
   box-shadow: none !important;
 }
 
-/* ===== Filets de sécurité CSS (si l'UI se recompose) ===== */
+/* Filets de sécurité (cache menus indésirables) */
 [data-element="downloadButton"],
 [data-element="downloadFileButton"],
 [data-element="printButton"],
@@ -75,6 +104,10 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 [data-element="rotateClockwiseButton"],
 [data-element="rotateCounterClockwiseButton"],
 [data-element="pageManipulationOverlayRotateClockwise"],
-[data-element="pageManipulationOverlayRotateCounterClockwise"] {
+[data-element="pageManipulationOverlayRotateCounterClockwise"],
+[data-element="pageByPageButton"],
+[data-element="doublePageButton"],
+[data-element="coverFacingButton"],
+[data-element="pageOrientationButton"] {
   display: none !important;
 }
