@@ -1,23 +1,26 @@
-// Ce code tourne DANS l'iframe du viewer (pas de souci cross-origin)
+// =========================================================
+// JEANSELLEM — PDF Viewer (UI settings)
+// Fichier : pdfjs/config.js
+// =========================================================
+
 instance.UI.addEventListener(instance.UI.Events.VIEWER_LOADED, () => {
   // Masquer les éléments inutiles
   instance.UI.disableElements([
-    'printButton',
-    'downloadButton',
-    'shareButton',
-    'themeChangeButton',          // Light/Dark mode
-    'languageButton',
-    'selectToolButton',
-    'panToolButton',
-    'rotateClockwiseButton',
-    'rotateCounterClockwiseButton'
+    'downloadButton',              // Télécharger
+    'printButton',                 // Imprimer
+    'themeChangeButton',           // Light/Dark mode
+    'languageButton',              // Langue
+    'selectToolButton',            // Outil Sélection
+    'panToolButton',               // Outil Main
+    'rotateClockwiseButton',       // Rotation horaire
+    'rotateCounterClockwiseButton' // Rotation anti-horaire
   ]);
 
-  // Ajouter un bouton plein écran natif (au cas où masqué par le thème)
+  // Bouton plein écran (si jamais masqué par le thème)
   instance.UI.setHeaderItems(header => {
     header.push({ type: 'actionButton', dataElement: 'fullscreenButton' });
   });
 
-  // Si besoin, tu peux forcer le thème sombre aussi en JS :
-  // instance.UI.setTheme('dark');
+  // Forcer le thème sombre pour refléter viewer.css
+  instance.UI.setTheme('dark');
 });
