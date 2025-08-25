@@ -1,67 +1,66 @@
 // =========================================================
-// JEANSELLEM — PDF Viewer (UI settings personnalisés)
+// JEANSELLEM — PDF Viewer (UI settings, clair + fullscreen custom)
 // =========================================================
 
 instance.UI.addEventListener(instance.UI.Events.VIEWER_LOADED, () => {
   const { UI } = instance;
 
-  // Désactiver fonctions natives (print, download, file picker)
+  // Verrous fonctionnels
   UI.setFeatureFlags({
     disableLocalFilePicker: true,
     disablePrint: true,
-    disableDownload: true
+    disableDownload: true,
   });
 
-  // Liste d’éléments à cacher
+  // Cacher les éléments indésirables
   const HIDE_IDS = [
-    'downloadButton', 'downloadFileButton',
+    'downloadButton','downloadFileButton',
     'printButton',
-    'themeChangeButton',
-    'languageButton',
-    'selectToolButton', 'textSelectToolButton',
-    'panToolButton',
-    'rotateClockwiseButton', 'rotateCounterClockwiseButton',
-    'pageManipulationOverlayRotateClockwise',
-    'pageManipulationOverlayRotateCounterClockwise',
+    'themeChangeButton','languageButton',
+    'selectToolButton','textSelectToolButton','panToolButton',
+    'rotateClockwiseButton','rotateCounterClockwiseButton',
+    'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
 
-    // Supprimer les entrées du menu de disposition
-    'pageTransitionButton', // "Page by Page" vs "Continuous"
-    'pageOrientationButton', // orientation
+    // Menu disposition : on ne garde que Continuous Page & Single Page
+    'pageByPageButton',
     'doublePageButton',
-    'coverFacingButton'
+    'coverFacingButton',
+    'pageOrientationButton',
+
+    // Ancien bouton fullscreen
+    'fullscreenButton'
   ];
 
-  function applyHiding() {
+  function hideAll() {
     try {
       UI.disableElements(HIDE_IDS);
-      HIDE_IDS.forEach(id => {
-        UI.updateElement(id, { hidden: true, disabled: true });
-      });
+      HIDE_IDS.forEach(id => UI.updateElement(id, { hidden: true, disabled: true }));
     } catch (e) {}
   }
-  applyHiding();
-  setTimeout(applyHiding, 300);
+  hideAll();
+  setTimeout(hideAll, 250);
 
-  // Observer pour re-appliquer si besoin
+  // Observer re-render
   const root = UI.getRootElement && UI.getRootElement();
   if (root) {
-    const mo = new MutationObserver(() => applyHiding());
-    mo.observe(root, { childList: true, subtree: true, attributes: true });
+    new MutationObserver(hideAll).observe(root, { childList: true, subtree: true, attributes: true });
   }
 
-  // Réorganiser la barre d’outils
+  // Réorganiser barre d’outils avec bouton fullscreen custom
   UI.setHeaderItems(header => {
-    // header contient les groupes (zoom, search, etc.)
-    // Ici on insère Fullscreen après le zoom
-    const items = [
+    header.push(
       { type: 'zoomOutButton' },
       { type: 'zoomDropdown' },
       { type: 'zoomInButton' },
-      { type: 'actionButton', dataElement: 'fullscreenButton' } // ajouté ici
-    ];
-    header.push(...items);
+      {
+        type: 'actionButton',
+        dataElement: 'myFullscreenButton', // identifiant unique
+        title: 'Full screen',
+        onClick: () => UI.enterFullscreen()
+      }
+    );
   });
 
-  // Thème sombre
-  UI.setTheme('dark');
+  // Forcer le thème clair (adapté à ton CSS)
+  UI.setTheme('light');
 });
