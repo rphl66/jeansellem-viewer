@@ -1,63 +1,65 @@
-/* ===== Custom viewer.css ===== */
+/* =========================================================
+   JEANSELLEM — PDF Viewer (custom UI skin)
+   Fichier : pdfjs/viewer.css
+   Effets : thème sombre, Overpass, boutons arrondis
+   ========================================================= */
 
-/* Import police Overpass depuis Google Fonts */
+/* 0) Police */
 @import url('https://fonts.googleapis.com/css2?family=Overpass:wght@400;600&display=swap');
 
-:root {
-  --primary-color: #161a22;        /* Fond sombre */
-  --secondary-color: #3a86ff;      /* Accent (bleu) */
-  --text-color: #e8ecf2;           /* Texte clair */
-  --muted-color: #9aa3b2;          /* Texte secondaire */
+/* 1) Variables de thème */
+:root{
+  --primary-color: #161a22;    /* Barre du haut / cadres */
+  --secondary-color: #3a86ff;  /* Accent (hover/actif) */
+  --text-color: #e8ecf2;       /* Texte principal */
+  --muted-color: #9aa3b2;      /* Texte secondaire */
+
   --button-bg: #222836;
   --button-bg-hover: #2e3445;
   --button-bg-active: #3a86ff;
+
   --border-radius: 10px;
-  --font-family: 'Overpass', sans-serif;
+  --font-family: 'Overpass', system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
 
-/* Police globale */
-body, .Text, .Button, .Header, .Panel {
+/* 2) Typo globale de l'UI */
+body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   font-family: var(--font-family) !important;
 }
 
-/* Barre du haut */
-.Header {
-  background-color: var(--primary-color) !important;
+/* 3) Barre supérieure */
+.Header{
+  background: var(--primary-color) !important;
   border-bottom: 1px solid #2a2f3a !important;
 }
 
-/* Icônes / texte */
-.Icon, .Text, .Label {
+/* 4) Couleurs d’icônes / textes */
+.Icon, .Text, .Label{
   color: var(--text-color) !important;
   fill: var(--text-color) !important;
 }
 
-/* Boutons */
-.Button {
+/* 5) Boutons */
+.Button{
   background: var(--button-bg) !important;
   color: var(--text-color) !important;
   border-radius: var(--border-radius) !important;
-  transition: background 0.2s ease;
+  transition: background .2s ease, box-shadow .2s ease;
 }
-
-.Button:hover {
-  background: var(--button-bg-hover) !important;
-}
-
-.Button.active, .Button:active {
+.Button:hover{ background: var(--button-bg-hover) !important; }
+.Button.active, .Button:active{
   background: var(--button-bg-active) !important;
   color: #fff !important;
 }
 
-/* Panneaux (menus, modales) */
-.Panel, .Menu, .Popup, .Overlay, .Modal {
-  background-color: #1c1f29 !important;
-  border-radius: var(--border-radius) !important;
-  border: 1px solid #2a2f3a !important;
+/* 6) Panneaux (menus, dialogues, popups) */
+.Panel, .Menu, .Popup, .Overlay, .Modal{
+  background: #1c1f29 !important;
   color: var(--text-color) !important;
-}
-
-/* Désactiver les ombres lourdes */
-.Panel, .Menu, .Popup, .Overlay, .Modal {
+  border: 1px solid #2a2f3a !important;
+  border-radius: var(--border-radius) !important;
   box-shadow: none !important;
 }
+
+/* 7) (Optionnel) arrière-plan autour du document */
+#documentHeader, .DocumentContainer { background: #11141b !important; }
