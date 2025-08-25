@@ -16,11 +16,18 @@ instance.UI.addEventListener(instance.UI.Events.VIEWER_LOADED, () => {
     'rotateCounterClockwiseButton' // Rotation anti-horaire
   ]);
 
-  // Bouton plein écran (si jamais masqué par le thème)
+  // Désactiver les fonctions natives (menu contextuel & raccourcis)
+  instance.UI.setFeatureFlags({
+    disableLocalFilePicker: true,
+    disablePrint: true,
+    disableDownload: true
+  });
+
+  // Ajouter bouton plein écran
   instance.UI.setHeaderItems(header => {
     header.push({ type: 'actionButton', dataElement: 'fullscreenButton' });
   });
 
-  // Forcer le thème sombre pour refléter viewer.css
+  // Forcer le thème sombre (pour cohérence avec viewer.css)
   instance.UI.setTheme('dark');
 });
