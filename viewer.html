@@ -4,25 +4,28 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Viewer</title>
-  <style>html,body,#viewer{height:100%;margin:0}</style>
+  <style>
+    html,body { height:100%; margin:0 }
+    #viewer { height:100vh }
+  </style>
 </head>
 <body>
   <div id="viewer"></div>
 
-  <script src="./pdfjs/webviewer.min.js"></script>
+  <!-- librairie -->
+  <script src="pdfjs/webviewer.min.js"></script>
   <script>
-    const el = document.getElementById('viewer');
-    const p = new URLSearchParams(location.search);
-    const file = p.get('file') || 'sample.pdf';            // fallback
-    const isAbs = /^(https?:)?\/\//i.test(file);
-    const docUrl = isAbs ? file : new URL(file, location).href;
+    const params = new URLSearchParams(location.search);
+    const file = params.get('file') || 'sample.pdf';
 
     WebViewer({
-      path: './pdfjs',                                     // << IMPORTANT
-      licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      initialDoc: docUrl
-    }, el).then(() => console.log('WebViewer prêt'))
-      .catch(err => console.error('Init error', err));
+      path: 'pdfjs',                       // dossier qui contient /core et /ui
+      licenseKey: 'WQbdx5KD5SbQkjFwosWR', // <- TA CLÉ ICI
+      initialDoc: file
+    }, document.getElementById('viewer')).then(({ UI }) => {
+      // Si ?file= est une URL absolue, on la (re)charge explicitement
+      if (/^https?:\/\//.test(file)) UI.loadDocument(file);
+    });
   </script>
 </body>
 </html>
