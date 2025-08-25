@@ -1,0 +1,63 @@
+/* ===== Custom viewer.css ===== */
+
+/* Import police Overpass depuis Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Overpass:wght@400;600&display=swap');
+
+:root {
+  --primary-color: #161a22;        /* Fond sombre */
+  --secondary-color: #3a86ff;      /* Accent (bleu) */
+  --text-color: #e8ecf2;           /* Texte clair */
+  --muted-color: #9aa3b2;          /* Texte secondaire */
+  --button-bg: #222836;
+  --button-bg-hover: #2e3445;
+  --button-bg-active: #3a86ff;
+  --border-radius: 10px;
+  --font-family: 'Overpass', sans-serif;
+}
+
+/* Police globale */
+body, .Text, .Button, .Header, .Panel {
+  font-family: var(--font-family) !important;
+}
+
+/* Barre du haut */
+.Header {
+  background-color: var(--primary-color) !important;
+  border-bottom: 1px solid #2a2f3a !important;
+}
+
+/* Icônes / texte */
+.Icon, .Text, .Label {
+  color: var(--text-color) !important;
+  fill: var(--text-color) !important;
+}
+
+/* Boutons */
+.Button {
+  background: var(--button-bg) !important;
+  color: var(--text-color) !important;
+  border-radius: var(--border-radius) !important;
+  transition: background 0.2s ease;
+}
+
+.Button:hover {
+  background: var(--button-bg-hover) !important;
+}
+
+.Button.active, .Button:active {
+  background: var(--button-bg-active) !important;
+  color: #fff !important;
+}
+
+/* Panneaux (menus, modales) */
+.Panel, .Menu, .Popup, .Overlay, .Modal {
+  background-color: #1c1f29 !important;
+  border-radius: var(--border-radius) !important;
+  border: 1px solid #2a2f3a !important;
+  color: var(--text-color) !important;
+}
+
+/* Désactiver les ombres lourdes */
+.Panel, .Menu, .Popup, .Overlay, .Modal {
+  box-shadow: none !important;
+}
