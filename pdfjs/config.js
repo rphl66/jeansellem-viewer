@@ -1,66 +1,67 @@
 // =========================================================
-// JEANSELLEM — PDF Viewer (UI settings, robuste)
-// Fichier : pdfjs/config.js
+// JEANSELLEM — PDF Viewer (UI settings personnalisés)
 // =========================================================
 
 instance.UI.addEventListener(instance.UI.Events.VIEWER_LOADED, () => {
   const { UI } = instance;
 
-  // 1) Verrous "fonctionnels" (empêche print / download / file picker partout)
+  // Désactiver fonctions natives (print, download, file picker)
   UI.setFeatureFlags({
     disableLocalFilePicker: true,
     disablePrint: true,
     disableDownload: true
   });
 
-  // 2) Liste élargie d'IDs à masquer (inclut alias & overlays)
+  // Liste d’éléments à cacher
   const HIDE_IDS = [
-    // Action / menu
     'downloadButton', 'downloadFileButton',
     'printButton',
     'themeChangeButton',
     'languageButton',
-
-    // Tools
     'selectToolButton', 'textSelectToolButton',
     'panToolButton',
-
-    // Rotate (header + overlay de manipulation de page)
-    'rotateClockwiseButton',
-    'rotateCounterClockwiseButton',
+    'rotateClockwiseButton', 'rotateCounterClockwiseButton',
     'pageManipulationOverlayRotateClockwise',
-    'pageManipulationOverlayRotateCounterClockwise'
+    'pageManipulationOverlayRotateCounterClockwise',
+
+    // Supprimer les entrées du menu de disposition
+    'pageTransitionButton', // "Page by Page" vs "Continuous"
+    'pageOrientationButton', // orientation
+    'doublePageButton',
+    'coverFacingButton'
   ];
 
   function applyHiding() {
     try {
       UI.disableElements(HIDE_IDS);
-      // Ceinture + bretelles : cache aussi via updateElement
       HIDE_IDS.forEach(id => {
         UI.updateElement(id, { hidden: true, disabled: true });
       });
-    } catch (e) {
-      // no-op
-    }
+    } catch (e) {}
   }
-
-  // 3) Appliquer immédiatement + ré-appliquer si l'UI se recompose
   applyHiding();
-  setTimeout(applyHiding, 0);
   setTimeout(applyHiding, 300);
 
-  // Observer les mutations de l'UI pour ré-appliquer si nécessaire
+  // Observer pour re-appliquer si besoin
   const root = UI.getRootElement && UI.getRootElement();
   if (root) {
     const mo = new MutationObserver(() => applyHiding());
     mo.observe(root, { childList: true, subtree: true, attributes: true });
   }
 
-  // 4) Ajouter le bouton plein écran (utile)
+  // Réorganiser la barre d’outils
   UI.setHeaderItems(header => {
-    header.push({ type: 'actionButton', dataElement: 'fullscreenButton' });
+    // header contient les groupes (zoom, search, etc.)
+    // Ici on insère Fullscreen après le zoom
+    const items = [
+      { type: 'zoomOutButton' },
+      { type: 'zoomDropdown' },
+      { type: 'zoomInButton' },
+      { type: 'actionButton', dataElement: 'fullscreenButton' } // ajouté ici
+    ];
+    header.push(...items);
   });
 
-  // 5) Forcer le thème sombre (cohérent avec viewer.css)
+  // Thème sombre
   UI.setTheme('dark');
 });
