@@ -13,31 +13,25 @@
 <body>
   <div id="viewer"></div>
 
-  <!-- librairie -->
   <script src="pdfjs/webviewer.min.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
     const file = params.get('file') || 'sample.pdf';
 
     WebViewer({
-      path: 'pdfjs',                       // dossier qui contient /core et /ui
-      licenseKey: 'WQbdx5KD5SbQkjFwosWR', // <- TA CLÉ ICI
+      path: 'pdfjs',
+      licenseKey: 'WQbdx5KD5SbQkjFwosWR',
       initialDoc: file
     }, document.getElementById('viewer')).then(({ UI }) => {
-      // Si ?file= est une URL absolue, on la (re)charge explicitement
       if (/^https?:\/\//.test(file)) UI.loadDocument(file);
 
-    
-
-      /* ---- B) Si A n’affiche rien, utilise ce bouton custom ----
+      // Bouton plein écran natif de la UI
       UI.setHeaderItems(header => {
-        header.push({
-          type: 'actionButton',
-          title: 'Plein écran',
-          onClick: () => UI.enterFullscreen()
-        });
+        header.push({ type: 'actionButton', dataElement: 'fullscreenButton' });
       });
-      
+
+      // (Optionnel) Titre de tooltip
+      UI.updateElement('fullscreenButton', { title: 'Plein écran' });
     });
   </script>
 </body>
