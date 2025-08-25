@@ -6,9 +6,8 @@
   <title>Viewer</title>
   <style>
     html,body { height:100%; margin:0 }
-    #viewer { height:100vh }
-    </style>
-  <!-- Feuille CSS perso -->
+    #viewer   { height:100vh }
+  </style>
   <link rel="stylesheet" href="custom.css">
 </head>
 <body>
@@ -27,6 +26,21 @@
     }, document.getElementById('viewer')).then(({ UI }) => {
       // Si ?file= est une URL absolue, on la (re)charge explicitement
       if (/^https?:\/\//.test(file)) UI.loadDocument(file);
+
+      /* ---- A) Utiliser le bouton natif de la UI ---- */
+      UI.setHeaderItems(header => {
+        header.push({ type: 'actionButton', dataElement: 'fullscreenButton' });
+      });
+
+      /* ---- B) Si A n’affiche rien, utilise ce bouton custom ----
+      UI.setHeaderItems(header => {
+        header.push({
+          type: 'actionButton',
+          title: 'Plein écran',
+          onClick: () => UI.enterFullscreen()
+        });
+      });
+      */
     });
   </script>
 </body>
