@@ -7,12 +7,12 @@
 
 /* 1) Variables personnalisées */
 :root{
-  --primary-color: #e6f2fa;   /* Cadre / fond autour du PDF */
+  --primary-color: #ffffff;   /* Cadre / fond autour du PDF */
   --secondary-color: #3a86ff; /* Accent (au besoin) */
-  --text-color: #000000;      /* Texte clair */
+  --text-color: #111111;      /* Texte clair */
   --muted-color: #9aa3b2;
 
-  --button-bg: #e6f2fa;       /* Boutons noirs */
+  --button-bg: #ffffff;       /* Boutons noirs */
   --button-bg-hover: #e6f2fa;    /* Boutons survolés */
   --button-bg-active: #e6f2fa;
 
