@@ -9,18 +9,20 @@
 <body>
   <div id="viewer"></div>
 
-  <!-- Charge le bootstrap DEPUIS TON DÉPÔT -->
-  <script src="pdfjs/webviewer.min.js"></script>
+  <script src="./pdfjs/webviewer.min.js"></script>
   <script>
     const el = document.getElementById('viewer');
-    const params = new URLSearchParams(location.search);
-    const file = params.get('file') || 'sample.pdf';   // fallback
+    const p = new URLSearchParams(location.search);
+    const file = p.get('file') || 'sample.pdf';            // fallback
+    const isAbs = /^(https?:)?\/\//i.test(file);
+    const docUrl = isAbs ? file : new URL(file, location).href;
 
     WebViewer({
-      path: 'pdfjs',                    // <<< IMPORTANT : ton dossier local
+      path: './pdfjs',                                     // << IMPORTANT
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      initialDoc: file                 // ex: 1971-sandro-adriani.pdf
-    }, el);
+      initialDoc: docUrl
+    }, el).then(() => console.log('WebViewer prêt'))
+      .catch(err => console.error('Init error', err));
   </script>
 </body>
 </html>
