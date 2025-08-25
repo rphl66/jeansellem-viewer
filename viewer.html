@@ -27,10 +27,7 @@
       // Si ?file= est une URL absolue, on la (re)charge explicitement
       if (/^https?:\/\//.test(file)) UI.loadDocument(file);
 
-      /* ---- A) Utiliser le bouton natif de la UI ---- */
-      UI.setHeaderItems(header => {
-        header.push({ type: 'actionButton', dataElement: 'fullscreenButton' });
-      });
+    
 
       /* ---- B) Si A n’affiche rien, utilise ce bouton custom ----
       UI.setHeaderItems(header => {
@@ -40,7 +37,7 @@
           onClick: () => UI.enterFullscreen()
         });
       });
-      */
+      
     });
   </script>
 </body>
