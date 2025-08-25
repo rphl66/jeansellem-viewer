@@ -4,25 +4,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Viewer</title>
-  <style>
-    html,body,#viewer{height:100%;margin:0}
-  </style>
+  <style>html,body,#viewer{height:100%;margin:0}</style>
 </head>
 <body>
   <div id="viewer"></div>
 
-  <!-- charge le bootstrap depuis TON dépôt -->
+  <!-- Charge le bootstrap DEPUIS TON DÉPÔT -->
   <script src="pdfjs/webviewer.min.js"></script>
   <script>
     const el = document.getElementById('viewer');
-    // lit ?file=... dans l’URL, sinon ouvre sample.pdf
     const params = new URLSearchParams(location.search);
-    const file = params.get('file') || 'sample.pdf';
+    const file = params.get('file') || 'sample.pdf';   // fallback
 
     WebViewer({
-      path: 'pdfjs',                         // <<< IMPORTANT : ton dossier local
+      path: 'pdfjs',                    // <<< IMPORTANT : ton dossier local
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      initialDoc: file
+      initialDoc: file                 // ex: 1971-sandro-adriani.pdf
     }, el);
   </script>
 </body>
