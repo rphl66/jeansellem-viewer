@@ -98,3 +98,27 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 [data-element="pageOrientationButton"]{
   display:none !important;
 }
+/* ========= Page navigation (flottant bas) — couleur dédiée ========= */
+/* Variable que TU peux changer sans impacter le reste */
+:root { --pager-bg: #eaeef9; /* <— mets ta couleur ici */ }
+
+/* Conteneur du pager (couvre plusieurs variantes de classes/data-element) */
+[data-element="pageNavOverlay"],
+[data-element="pageNavigationOverlay"],
+.PageNavOverlay,
+.pageNavOverlay {
+  background: var(--pager-bg) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08) !important;
+  border: 1px solid rgba(0,0,0,.06) !important;
+}
+
+/* Boutons à l’intérieur du pager : transparents, pour garder la pastille du conteneur */
+[data-element="pageNavOverlay"] .Button,
+[data-element="pageNavigationOverlay"] .Button,
+.PageNavOverlay .Button,
+.pageNavOverlay .Button {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
