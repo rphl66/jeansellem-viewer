@@ -8,6 +8,7 @@
     html,body { height:100%; margin:0 }
     #viewer   { height:100vh }
   </style>
+  <!-- CSS local pour la version GitHub -->
   <link rel="stylesheet" href="custom.css">
 </head>
 <body>
@@ -21,16 +22,18 @@
     WebViewer({
       path: 'pdfjs',
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      initialDoc: file
+      initialDoc: file,
+
+      // Même config, mais version relative
+      config: 'pdfjs/config.js'
     }, document.getElementById('viewer')).then(({ UI }) => {
       if (/^https?:\/\//.test(file)) UI.loadDocument(file);
 
-      // Bouton plein écran natif de la UI
+      // Bouton plein écran natif
       UI.setHeaderItems(header => {
         header.push({ type: 'actionButton', dataElement: 'fullscreenButton' });
       });
 
-      // (Optionnel) Titre de tooltip
       UI.updateElement('fullscreenButton', { title: 'Plein écran' });
     });
   </script>
