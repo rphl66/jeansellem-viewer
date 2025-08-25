@@ -1,65 +1,80 @@
 /* =========================================================
    JEANSELLEM — PDF Viewer (custom UI skin)
+   Couleurs: cadre #e6f2fa, boutons #000
    ========================================================= */
 
 /* Police Overpass */
 @import url('https://fonts.googleapis.com/css2?family=Overpass:wght@400;600&display=swap');
 
-/* 1) Variables personnalisées */
+/* Variables */
 :root{
-  --primary-color: #ffffff;   /* Cadre / fond autour du PDF */
-  --secondary-color: #3a86ff; /* Accent (au besoin) */
-  --text-color: #111111;      /* Texte clair */
-  --muted-color: #9aa3b2;
+  --primary-color: #ffffff;   /* Cadre / barre du haut / fond autour du doc */
+  --secondary-color: #3a86ff; /* Accent si besoin */
+  --text-color: #111111;      /* Texte clair sur boutons */
+  --muted-color: #ffffff;
 
   --button-bg: #ffffff;       /* Boutons noirs */
-  --button-bg-hover: #e6f2fa;    /* Boutons survolés */
-  --button-bg-active: #e6f2fa;
+  --button-bg-hover: #ffffff; /* Survol */
+  --button-bg-active: #ffffff;
 
   --border-radius: 10px;
-  --font-family: 'Overpass', sans-serif;
+  --font-family: 'Overpass', system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
 
-/* 2) Police globale */
+/* Typo globale UI */
 body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   font-family: var(--font-family) !important;
 }
 
-/* 3) Cadre / barre du haut */
+/* Cadre / barre du haut */
 .Header {
   background-color: var(--primary-color) !important;
-  border-bottom: 1px solid #c4d8e2 !important;
+  border-bottom: 1px solid #ffffff !important;
 }
 #documentHeader, .DocumentContainer {
   background-color: var(--primary-color) !important;
 }
 
-/* 4) Icônes / textes */
+/* Icônes / textes */
 .Icon, .Text, .Label {
   color: var(--text-color) !important;
   fill: var(--text-color) !important;
 }
 
-/* 5) Boutons */
+/* Boutons */
 .Button {
   background: var(--button-bg) !important;
   color: var(--text-color) !important;
   border-radius: var(--border-radius) !important;
   transition: background .2s ease;
 }
-.Button:hover {
-  background: var(--button-bg-hover) !important;
-}
+.Button:hover { background: var(--button-bg-hover) !important; }
 .Button.active, .Button:active {
   background: var(--button-bg-active) !important;
   color: #fff !important;
 }
 
-/* 6) Panneaux (menus, modales) */
+/* Panneaux / menus */
 .Panel, .Menu, .Popup, .Overlay, .Modal {
-  background: #1c1f29 !important;
+  background: #ffffff !important;
   border-radius: var(--border-radius) !important;
-  border: 1px solid #2a2f3a !important;
+  border: 1px solid #ffffff !important;
   color: var(--text-color) !important;
   box-shadow: none !important;
+}
+
+/* ===== Filets de sécurité CSS (si l'UI se recompose) ===== */
+[data-element="downloadButton"],
+[data-element="downloadFileButton"],
+[data-element="printButton"],
+[data-element="themeChangeButton"],
+[data-element="languageButton"],
+[data-element="selectToolButton"],
+[data-element="textSelectToolButton"],
+[data-element="panToolButton"],
+[data-element="rotateClockwiseButton"],
+[data-element="rotateCounterClockwiseButton"],
+[data-element="pageManipulationOverlayRotateClockwise"],
+[data-element="pageManipulationOverlayRotateCounterClockwise"] {
+  display: none !important;
 }
