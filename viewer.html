@@ -1,41 +1,52 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Viewer</title>
-  <style>
-    html,body { height:100%; margin:0 }
-    #viewer   { height:100vh }
-  </style>
-  <!-- CSS local pour la version GitHub -->
-  <link rel="stylesheet" href="custom.css">
-</head>
-<body>
-  <div id="viewer"></div>
+<!-- Conteneur -->
+<div id="jeansellem-viewer" style="height:80vh; min-height:480px;"></div>
 
-  <script src="pdfjs/webviewer.min.js"></script>
-  <script>
-    const params = new URLSearchParams(location.search);
-    const file = params.get('file') || 'sample.pdf';
+<!-- Lib depuis GitHub Pages -->
+<script src="https://rphl66.github.io/jeansellem-viewer/pdfjs/webviewer.min.js"></script>
 
-    WebViewer({
-      path: 'pdfjs',
-      licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      initialDoc: file,
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  let pdfUrl = params.get('file');
 
-      // Même config, mais version relative
-      config: 'pdfjs/config.js'
-    }, document.getElementById('viewer')).then(({ UI }) => {
-      if (/^https?:\/\//.test(file)) UI.loadDocument(file);
+  // Par défaut : utiliser le PDF hébergé sur GitHub (évite CORS)
+  if (!pdfUrl) {
+    pdfUrl = 'https://rphl66.github.io/jeansellem-viewer/1971-sandro-adriani.pdf';
+  } else if (!/^https?:\/\//.test(pdfUrl) && !pdfUrl.startsWith('/')) {
+    // Si on donne juste un nom de fichier → prendre la copie GitHub
+    pdfUrl = 'https://rphl66.github.io/jeansellem-viewer/' + encodeURIComponent(pdfUrl);
+  } else if (pdfUrl.startsWith('/s/')) {
+    // Si on force Squarespace, rendre l’URL absolue
+    pdfUrl = 'https://www.raphaelleonardlevy.com' + pdfUrl;
+  }
 
-      // Bouton plein écran natif
-      UI.setHeaderItems(header => {
-        header.push({ type: 'actionButton', dataElement: 'fullscreenButton' });
-      });
+  const options = {
+    path: 'https://rphl66.github.io/jeansellem-viewer/pdfjs',
+    licenseKey: 'WQbdx5KD5SbQkjFwosWR',       // clé GitHub
+    initialDoc: pdfUrl,
 
-      UI.updateElement('fullscreenButton', { title: 'Plein écran' });
-    });
-  </script>
-</body>
-</html>
+    // CSS servi depuis GitHub (même origine que l’UI → pas d’erreur)
+    css: 'https://rphl66.github.io/jeansellem-viewer/pdfjs/viewer.css',
+
+    // Config exécutée dans l’iframe (GitHub)
+    config: 'https://rphl66.github.io/jeansellem-viewer/pdfjs/config.js'
+  };
+
+  function initViewer() {
+    WebViewer(options, document.getElementById('jeansellem-viewer'));
+  }
+
+  // Lazy init
+  const mountEl = document.getElementById('jeansellem-viewer');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting)) {
+        io.disconnect(); initViewer();
+      }
+    }, { rootMargin: '300px' });
+    io.observe(mountEl);
+  } else {
+    initViewer();
+  }
+})();
+</script>
