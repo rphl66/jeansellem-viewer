@@ -12,9 +12,9 @@
   --text-color: #000000;      /* Texte clair */
   --muted-color: #9aa3b2;
 
-  --button-bg: #D5E7EC;       /* Boutons noirs */
-  --button-bg-hover: #222;    /* Boutons survolés */
-  --button-bg-active: #3a86ff;
+  --button-bg: #e6f2fa;       /* Boutons noirs */
+  --button-bg-hover: #e6f2fa;    /* Boutons survolés */
+  --button-bg-active: #e6f2fa;
 
   --border-radius: 10px;
   --font-family: 'Overpass', sans-serif;
