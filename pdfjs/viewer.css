@@ -1,7 +1,5 @@
 /* =========================================================
-   JEANSELLEM — PDF Viewer (custom UI skin clair)
-   Cadre #fff, boutons #fff, texte noir,
-   Fullscreen personnalisable
+   JEANSELLEM — PDF Viewer (skin clair + espacement + FS dédié)
    ========================================================= */
 
 /* Police */
@@ -9,28 +7,28 @@
 
 /* Variables */
 :root{
-  --primary-color: #ffffff;   /* Fond / barre du haut / cadre */
-  --secondary-color: #3a86ff; /* Accent */
-  --text-color: #111111;      /* Texte standard */
-  --muted-color: #ffffff;
+  --primary-color: #ffffff;    /* fond/barre/cadre */
+  --text-color: #111111;
 
-  --btn-bg: #ffffff;          /* Boutons standards */
+  /* Boutons génériques */
+  --btn-bg: #ffffff;
   --btn-bg-hover: #f2f2f2;
   --btn-bg-active: #3a86ff;
   --btn-radius: 10px;
 
-  --toolbar-gap: 12px;        /* Espacement entre boutons */
+  /* Espacement toolbar */
+  --toolbar-gap: 12px;
 
-  /* Fullscreen spécifique */
-  --fs-bg: #000000;           /* Fond du bouton Fullscreen */
-  --fs-fg: #ffffff;           /* Texte / icône */
+  /* Bouton Full screen (couleurs indépendantes) */
+  --fs-bg: #000000;
+  --fs-fg: #ffffff;
   --fs-hover: #222222;
   --fs-active: #3a86ff;
 
   --font-family: 'Overpass', system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
 
-/* Typo globale */
+/* Typo globale UI */
 body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   font-family: var(--font-family) !important;
 }
@@ -40,51 +38,40 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   background-color: var(--primary-color) !important;
   border-bottom: 1px solid #ffffff !important;
 }
-#documentHeader, .DocumentContainer {
-  background-color: var(--primary-color) !important;
-}
+#documentHeader, .DocumentContainer { background-color: var(--primary-color) !important; }
 
-/* Espacement des boutons */
+/* ESPACEMENT DES BOUTONS */
 .Header .Button,
 .Header [data-element="zoomDropdown"] {
   margin: 0 calc(var(--toolbar-gap) / 2) !important;
 }
 
 /* Boutons génériques */
-.Button {
+.Button{
   background: var(--btn-bg) !important;
   color: var(--text-color) !important;
   border-radius: var(--btn-radius) !important;
   transition: background .2s ease;
 }
 .Button:hover { background: var(--btn-bg-hover) !important; }
-.Button.active, .Button:active {
-  background: var(--btn-bg-active) !important;
-  color: #fff !important;
-}
+.Button.active, .Button:active { background: var(--btn-bg-active) !important; color:#fff !important; }
 
-/* Bouton fullscreen spécifique */
-.Button[data-element="myFullscreenButton"] {
+/* Bouton Full screen — style distinct */
+.Button[data-element="myFullscreenButton"]{
   background: var(--fs-bg) !important;
   color: var(--fs-fg) !important;
 }
-.Button[data-element="myFullscreenButton"]:hover {
-  background: var(--fs-hover) !important;
-}
+.Button[data-element="myFullscreenButton"]:hover{ background: var(--fs-hover) !important; }
 .Button[data-element="myFullscreenButton"].active,
-.Button[data-element="myFullscreenButton"]:active {
-  background: var(--fs-active) !important;
-  color: #fff !important;
+.Button[data-element="myFullscreenButton"]:active{
+  background: var(--fs-active) !important; color:#fff !important;
 }
 
-/* Icônes / texte */
-.Icon, .Text, .Label {
-  color: var(--text-color) !important;
-  fill: var(--text-color) !important;
-}
+/* Icônes / textes */
+.Icon, .Text, .Label { color: var(--text-color) !important; fill: var(--text-color) !important; }
 
 /* Panneaux / menus */
-.Panel, .Menu, .Popup, .Overlay, .Modal {
+.Panel, .Menu, .Popup, .Overlay, .Modal{
   background: #ffffff !important;
   border-radius: var(--btn-radius) !important;
   border: 1px solid #ffffff !important;
@@ -92,7 +79,7 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   box-shadow: none !important;
 }
 
-/* Filets de sécurité (cache menus indésirables) */
+/* Sécurité : cacher options indésirables partout */
 [data-element="downloadButton"],
 [data-element="downloadFileButton"],
 [data-element="printButton"],
@@ -108,6 +95,6 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 [data-element="pageByPageButton"],
 [data-element="doublePageButton"],
 [data-element="coverFacingButton"],
-[data-element="pageOrientationButton"] {
-  display: none !important;
+[data-element="pageOrientationButton"]{
+  display:none !important;
 }
