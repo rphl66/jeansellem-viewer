@@ -1,90 +1,55 @@
 // =========================================================
-// JEANSELLEM — PDF Viewer (UI + barre flottante interne) v14
+// JEANSELLEM — PDF Viewer (UI + barre flottante interne) v15
 // =========================================================
 (function () {
-  function onReady(instance) {
+  function boot() {
+    const instance = window.instance;
+    if (!instance || !instance.UI) return; // sécurité
     const { UI, Core } = instance;
 
-    // --- badge debug (retire ce bloc quand tout est ok)
-    (function debugBadge(){
-      if (document.getElementById('jsl-debug')) return;
+    // --- badge debug (retire quand tout est OK)
+    if (!document.getElementById('jsl-debug')) {
       const b = document.createElement('div');
       b.id = 'jsl-debug';
-      b.textContent = 'JSL v14 OK';
+      b.textContent = 'JSL v15 OK';
       Object.assign(b.style, {
         position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
         background:'#111', color:'#fff', font:'12px/1.2 monospace',
-        padding:'4px 6px', borderRadius:'6px', opacity:'0.8'
+        padding:'4px 6px', borderRadius:'6px', opacity:'0.85'
       });
       document.body.appendChild(b);
-      setTimeout(()=> b.remove(), 3500);
-    })();
+      setTimeout(()=> b.remove(), 3000);
+    }
 
-    // --- verrous
-    UI.setFeatureFlags({
-      disableLocalFilePicker: true,
-      disablePrint: true,
-      disableDownload: true,
-    });
-
-    // --- masquer éléments/menus
-    const HIDE_IDS = [
-      'downloadButton','downloadFileButton',
-      'printButton',
+    // --- verrous & masquages
+    UI.setFeatureFlags({ disableLocalFilePicker:true, disablePrint:true, disableDownload:true });
+    UI.disableElements([
+      'downloadButton','downloadFileButton','printButton',
       'themeChangeButton','languageButton',
       'selectToolButton','textSelectToolButton','panToolButton',
       'rotateClockwiseButton','rotateCounterClockwiseButton',
       'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
       'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
       'fullscreenButton'
-    ];
-    const KILL_TEXTS = new Set([
-      'Page by Page','Page Orientation','Page Layout','Double Page','Cover Facing Page'
     ]);
 
-    function hideById(){
-      try {
-        UI.disableElements(HIDE_IDS);
-        HIDE_IDS.forEach(id => UI.updateElement(id, { hidden:true, disabled:true }));
-      } catch(e){}
-    }
-    function hideByText(){
-      const overlays = document.querySelectorAll(
-        '[data-element="viewControlsOverlay"], .viewControlsOverlay, .Overlay, .Menu'
-      );
-      overlays.forEach(ov=>{
-        ov.querySelectorAll('*').forEach(el=>{
-          const t = (el.textContent||'').trim();
-          if (KILL_TEXTS.has(t)) {
-            const block = el.closest('[data-element], .Menu, .Row, li, button') || el;
-            block.style.display = 'none';
-          }
-        });
-      });
-    }
-    const applyAll = ()=>{ hideById(); hideByText(); };
-    applyAll(); setTimeout(applyAll,200); setTimeout(applyAll,600);
-    new MutationObserver(applyAll).observe(UI.getRootElement(), { childList:true, subtree:true, attributes:true });
-    document.addEventListener('click', ()=>setTimeout(applyAll,0), true);
-    document.addEventListener('keydown', ()=>setTimeout(applyAll,0), true);
-
-    // --- bouton FS dans la barre native (optionnel)
-    const fullscreenSVG =
-      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-      '<path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
-      '<path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-    UI.setHeaderItems(header => {
-      header.push(
+    // bouton FS dans la barre native (optionnel)
+    UI.setHeaderItems(h => {
+      h.push(
         { type:'zoomOutButton' },
         { type:'zoomDropdown' },
         { type:'zoomInButton' },
-        { type:'actionButton', dataElement:'myFullscreenButton', title:'Full screen', img: fullscreenSVG,
+        {
+          type:'actionButton',
+          dataElement:'myFullscreenButton',
+          title:'Full screen',
+          img:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
           onClick: () => UI.enterFullscreen()
         }
       );
     });
 
-    // --- mobile : couverture + page-by-page + FitWidth
+    // mobile (couverture + page-by-page + FitWidth)
     const isMobile = matchMedia('(max-width: 768px)').matches;
     Core.documentViewer.addEventListener('documentLoaded', () => {
       if (!isMobile) return;
@@ -97,7 +62,7 @@
 
     UI.setTheme('light');
 
-    // --- barre flottante interne (dans l’iframe)
+    // -------- barre flottante interne (dans l’iframe) --------
     function mountToolbar(){
       if (document.getElementById('jsl-toolbar')) return;
 
@@ -132,7 +97,9 @@
         </button>
       `;
 
-      document.body.appendChild(bar);
+      // accroche sur #app si présent, sinon body
+      const host = document.getElementById('app') || document.body;
+      host.appendChild(bar);
 
       const dv = Core.documentViewer;
       bar.addEventListener('click', e => {
@@ -156,10 +123,10 @@
     new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
   }
 
-  // — attraper toutes les variantes de chargement
+  // s’accrocher au bon moment (toutes variantes)
   if (window.instance && window.instance.UI) {
-    onReady(window.instance);
+    boot();
   } else {
-    window.addEventListener('viewerLoaded', () => onReady(window.instance));
+    window.addEventListener('viewerLoaded', boot, { once:true });
   }
 })();
