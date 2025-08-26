@@ -1,16 +1,19 @@
 // =========================================================
-// JEANSELLEM — UIConfig (UI + barre externe) v28
+// JEANSELLEM — UIConfig (UI + barre flottante obstinée) v27
 // =========================================================
 window.addEventListener('viewerLoaded', () => {
   const instance = window.instance;
   if (!instance || !instance.UI) return;
   const { UI, Core } = instance;
 
-  // --- Nettoyage de la barre native ----------------------
+
+
+  // --- Nettoyage total de la barre du haut --------------
   try {
     UI.setToolbarGroup && UI.setToolbarGroup(UI.ToolbarGroup.View);
     UI.setHeaderItems(h => { h.splice(0, h.length); });
-    UI.disableElements?.([
+
+    const HIDE = [
       'toolbarGroupButton','toolsHeader','toolsOverlay',
       'notesPanel','notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
       'ribbonsDropdownButton','menuButton','settingsButton','searchButton',
@@ -21,61 +24,137 @@ window.addEventListener('viewerLoaded', () => {
       'rotateClockwiseButton','rotateCounterClockwiseButton',
       'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
       'fullscreenButton'
-    ]);
+    ];
+    UI.disableElements && UI.disableElements(HIDE);
+    HIDE.forEach(id => UI.updateElement?.(id, { hidden:true, disabled:true }));
     UI.closeElements?.(['toolsHeader','toolStylePopup','stylePopup','pageNavOverlay','pageNavigationOverlay']);
   } catch(e){}
 
   UI.setTheme?.('light');
 
-  // --- Réglages à l’ouverture du PDF ---------------------
-  const applyModes = () => {
+  // --- Réglages mobiles à l’ouverture du PDF ------------
+  const isMobile = matchMedia('(max-width: 768px)').matches;
+  Core.documentViewer.addEventListener('documentLoaded', () => {
+    if (!isMobile) return;
     try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(e){}
     try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(e){}
     try { UI.setPageTransitionMode?.(UI.PageTransitionMode.PAGE); } catch(e){}
     try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e){}
     try { Core.documentViewer.setCurrentPage(1); } catch(e){}
-  };
-  Core.documentViewer.addEventListener('documentLoaded', applyModes);
-  applyModes();
+  });
 
-  // --- BARRE EXTERNE (dans <div id="jsl-toolbar">) -------
-  const bar = document.getElementById('jsl-toolbar');
-  if (bar && !bar.dataset.wired) {
-    bar.innerHTML = `
-      <button class="jsl-btn" data-act="zout" title="Zoom −">−</button>
-      <button class="jsl-btn" data-act="zin"  title="Zoom +">+</button>
-      <span class="jsl-sep"></span>
-      <button class="jsl-btn" data-act="first" title="Première page">⏮︎</button>
-      <button class="jsl-btn" data-act="prev"  title="Page précédente">◀︎</button>
-      <button class="jsl-btn" data-act="next"  title="Page suivante">▶︎</button>
-      <button class="jsl-btn" data-act="last"  title="Dernière page">⏭︎</button>
-      <span class="jsl-sep"></span>
-      <button class="jsl-btn jsl-btn-fs" data-act="fs" title="Plein écran">⤢</button>
-    `;
+  // --- BARRE FLOTTANTE (avec styles inline) -------------
+  function mountToolbar(){
+    if (document.getElementById('jsl-toolbar')) return;
 
+    const bar = document.createElement('div');
+    bar.id = 'jsl-toolbar';
+    // style container
+    Object.assign(bar.style, {
+      position:'fixed',
+      left:'50%',
+      bottom:'calc(16px + env(safe-area-inset-bottom, 0px))',
+      transform:'translateX(-50%)',
+      display:'inline-flex',
+      alignItems:'center',
+      gap:'10px',
+      padding:'8px 12px',
+      background:'rgba(255,255,255,0.95)',
+      color:'#000',
+      borderRadius:'10px',
+      boxShadow:'0 6px 16px rgba(0,0,0,.15)',
+      border:'1px solid rgba(0,0,0,.08)',
+      zIndex:'2147483647',
+      backdropFilter:'blur(6px)',
+      WebkitBackdropFilter:'blur(6px)'
+    });
+
+    // fabrique un bouton
+    const mkBtn = (label, act) => {
+      const btn = document.createElement('button');
+      btn.className = 'jsl-btn';
+      btn.dataset.act = act;
+      btn.textContent = label;
+      Object.assign(btn.style, {
+        width:'36px', height:'36px',
+        display:'inline-flex', alignItems:'center', justifyContent:'center',
+        background:'transparent', color:'inherit',
+        border:'0', borderRadius:'8px', cursor:'pointer', fontSize:'16px'
+      });
+      btn.onmouseenter = () => btn.style.background = 'rgba(0,0,0,.06)';
+      btn.onmouseleave = () => btn.style.background = 'transparent';
+      return btn;
+    };
+
+    const sep = () => {
+      const s = document.createElement('span');
+      Object.assign(s.style, { width:'1px', height:'24px', background:'rgba(0,0,0,.15)', margin:'0 4px' });
+      return s;
+    };
+
+    // boutons
+    const btns = [
+      mkBtn('−','zout'),
+      mkBtn('+','zin'),
+      sep(),
+      mkBtn('⏮︎','first'),
+      mkBtn('◀︎','prev'),
+      mkBtn('▶︎','next'),
+      mkBtn('⏭︎','last'),
+      sep(),
+      (()=>{ const b=mkBtn('⤢','fs'); b.style.background='#000'; b.style.color='#fff'; return b; })(),
+    ];
+    btns.forEach(b => bar.appendChild(b));
+
+    (document.getElementById('app') || document.body).appendChild(bar);
+    console.debug('[JSL] Barre flottante montée');
+
+    // actions (Core pour éviter toute promesse cross-domain)
     const dv = Core.documentViewer;
     const zoomStep = 1.1;
+
     bar.addEventListener('click', e => {
       const btn = e.target.closest('.jsl-btn'); if (!btn) return;
       const act = btn.dataset.act;
-      const page = dv.getCurrentPage?.() || 1;
-      const max  = dv.getPageCount?.() || 1;
+      const page = dv.getCurrentPage ? dv.getCurrentPage() : 1;
+      const max  = dv.getPageCount ? dv.getPageCount() : 1;
 
       try {
         switch (act) {
           case 'zin':  dv.zoomTo(dv.getZoomLevel() * zoomStep); break;
           case 'zout': dv.zoomTo(dv.getZoomLevel() / zoomStep); break;
-          case 'first': dv.setCurrentPage(1); break;
-          case 'prev':  dv.setCurrentPage(Math.max(1, page - 1)); break;
-          case 'next':  dv.setCurrentPage(Math.min(max, page + 1)); break;
-          case 'last':  dv.setCurrentPage(max); break;
-          case 'fs':    UI.enterFullscreen?.(); break;
+          case 'first': dv.setCurrentPage?.(1); break;
+          case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
+          case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
+          case 'last':  dv.setCurrentPage?.(max); break;
+          case 'fs':
+            (UI.enterFullscreen && UI.enterFullscreen())
+              || document.documentElement.requestFullscreen?.();
+            break;
         }
       } catch(err){
         console.warn('[JSL] Action toolbar erreur:', act, err);
       }
     });
-
-    bar.dataset.wired = '1';
   }
+
+  // --- Remontage obstiné --------------------------------
+  function ensureToolbarMounted() {
+    if (!document.getElementById('jsl-toolbar')) mountToolbar();
+  }
+
+  // 1) maintenant
+  ensureToolbarMounted();
+  // 2) à l’ouverture d’un doc
+  Core.documentViewer.addEventListener('documentLoaded', ensureToolbarMounted);
+  // 3) si le DOM change (ex: éditeur Squarespace)
+  new MutationObserver(ensureToolbarMounted).observe(document.body, { childList:true, subtree:true });
+  // 4) rappels
+  setTimeout(ensureToolbarMounted, 600);
+  setTimeout(ensureToolbarMounted, 1500);
+  const id = setInterval(ensureToolbarMounted, 2000);
+  setTimeout(() => clearInterval(id), 20000); // on arrête après 20s
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) setTimeout(ensureToolbarMounted, 250);
+  });
 });
