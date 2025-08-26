@@ -215,4 +215,19 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
     bottom: calc(16px + env(safe-area-inset-bottom));
   }
 }
+/* Cacher le sélecteur "Annotate" quoi qu'il arrive */
+[data-element="toolbarGroupButton"] { display:none !important; }
+
+/* Filet de sécurité si une barre d'annotation réapparaît */
+[data-element="toolsHeader"], [data-element="toolsOverlay"],
+.toolsHeader, .toolsOverlay { display:none !important; }
+
+/* Décaler un peu le pager pour ne pas recouvrir la barre */
+[data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
+.PageNavOverlay, .pageNavOverlay { margin-bottom:56px !important; }
+
+/* iOS safe area pour la barre flottante */
+@supports (padding: max(0px)) {
+  #jsl-toolbar.jsl-toolbar { bottom: calc(16px + env(safe-area-inset-bottom)); }
+}
 
