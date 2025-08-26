@@ -1,5 +1,5 @@
 /* =========================================================
-   JEANSELLEM — UIConfig (UI + barre flottante) v23
+   JEANSELLEM — UIConfig (UI + barre flottante) v24
    ========================================================= */
 window.addEventListener('viewerLoaded', () => {
   const instance = window.instance;
@@ -10,27 +10,27 @@ window.addEventListener('viewerLoaded', () => {
   if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
     b.id = 'jsl-debug';
-    b.textContent = 'JSL UI v23 OK';
+    b.textContent = 'JSL UI v24 OK';
     Object.assign(b.style, {
       position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
       background:'#111', color:'#fff', font:'12px/1.2 monospace',
       padding:'4px 6px', borderRadius:'6px', opacity:'0.85'
     });
     document.body.appendChild(b);
-    setTimeout(() => b.remove(), 3000);
+    setTimeout(()=> b.remove(), 3000);
   }
 
-  // Verrous (protégés : certaines versions n’ont pas setFeatureFlags)
+  // Verrous (optionnels selon la version)
   if (typeof UI.setFeatureFlags === 'function') {
     UI.setFeatureFlags({ disableLocalFilePicker: true, disablePrint: true, disableDownload: true });
   }
 
-  // Forcer la barre "View"
+  // Forcer la barre "View" si dispo
   if (typeof UI.setToolbarGroup === 'function' && UI.ToolbarGroup?.View) {
     UI.setToolbarGroup(UI.ToolbarGroup.View);
   }
 
-  // Cacher éléments/menus indésirables
+  // Cacher éléments/menus
   const HIDE_IDS = [
     'downloadButton','downloadFileButton','printButton',
     'themeChangeButton','languageButton',
@@ -39,7 +39,7 @@ window.addEventListener('viewerLoaded', () => {
     'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
     'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
     'fullscreenButton',
-    // Groupes d’annotation
+    // Groupes annotation
     'toolbarGroupButton','toolbarGroup-Annotate','toolbarGroup-Edit','toolbarGroup-Forms',
     'toolbarGroup-Insert','toolbarGroup-Measure','toolbarGroup-Shapes',
     'toolsHeader','toolsOverlay','toolStylePopup','stylePopup','annotationStylePopup',
@@ -47,14 +47,14 @@ window.addEventListener('viewerLoaded', () => {
   ];
   try {
     UI.disableElements(HIDE_IDS);
-    HIDE_IDS.forEach(id => UI.updateElement(id, { hidden: true, disabled: true }));
+    HIDE_IDS.forEach(id => UI.updateElement(id, { hidden:true, disabled:true }));
     UI.closeElements && UI.closeElements(['toolsHeader','toolStylePopup','stylePopup']);
   } catch {}
 
   // Pas d’outil d’annotation actif
   try { UI.setToolMode && UI.setToolMode(Core?.Tools?.ToolNames?.PAN); } catch {}
 
-  // Bouton plein écran dans la barre native (après les zooms)
+  // Bouton FS dans la barre native
   const fullscreenSVG =
     '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'+
     '<path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'+
@@ -66,62 +66,66 @@ window.addEventListener('viewerLoaded', () => {
       { type:'zoomDropdown' },
       { type:'zoomInButton' },
       { type:'actionButton', dataElement:'myFullscreenButton', title:'Full screen', img: fullscreenSVG,
-        onClick: () => UI.enterFullscreen && UI.enterFullscreen()
+        onClick: () => enterFullscreen()
       }
     );
   });
 
+  // Helpers zoom & fullscreen robustes
+  const dv = Core.documentViewer;
+  const getZoom = () =>
+    (typeof dv.getZoomLevel === 'function' && dv.getZoomLevel()) || 1;
+  const setZoom = (z) => {
+    try {
+      if (typeof dv.setZoomLevel === 'function') dv.setZoomLevel(z);
+      else if (typeof dv.zoomTo === 'function') dv.zoomTo(z);
+      else if (typeof UI.setZoomLevel === 'function') UI.setZoomLevel(z);
+      else if (typeof UI.zoomTo === 'function') UI.zoomTo(z);
+    } catch {}
+  };
+  function enterFullscreen() {
+    try { if (UI.enterFullscreen) return UI.enterFullscreen(); } catch {}
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen ||
+                el.mozRequestFullScreen || el.msRequestFullscreen;
+    if (req) req.call(el);
+  }
+
   // Mobile : couverture + page-by-page + FitWidth
   const isMobile = matchMedia('(max-width: 768px)').matches;
   Core.documentViewer.addEventListener('documentLoaded', () => {
-    if (!isMobile) return;
-    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch {}
-    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch {}
-    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch {}
-    try { UI.setFitMode(UI.FitMode.FitWidth); } catch {}
-    try { Core.documentViewer.setCurrentPage(1); } catch {}
+    if (isMobile) {
+      try { UI.setLayoutMode(UI.LayoutMode.Single); } catch {}
+      try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch {}
+      try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch {}
+      try { UI.setFitMode(UI.FitMode.FitWidth); } catch {}
+      try { Core.documentViewer.setCurrentPage(1); } catch {}
+    }
   });
 
   UI.setTheme('light');
 
-  // ===== Barre flottante interne (montée après documentLoaded) =====
-  function mountToolbar() {
+  // ===== Barre flottante (montée après chargement du document) =====
+  function buildToolbar() {
     if (document.getElementById('jsl-toolbar')) return;
 
     const bar = document.createElement('div');
     bar.id = 'jsl-toolbar';
     bar.className = 'jsl-toolbar';
     bar.innerHTML = `
-      <button class="jsl-btn" data-act="zout" title="Zoom out" aria-label="Zoom out">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <button class="jsl-btn" data-act="zin" title="Zoom in" aria-label="Zoom in">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
+      <button class="jsl-btn" data-act="zout" title="Zoom out" aria-label="Zoom out">−</button>
+      <button class="jsl-btn" data-act="zin"  title="Zoom in"  aria-label="Zoom in">+</button>
       <span class="jsl-sep"></span>
-      <button class="jsl-btn" data-act="first" title="Première page" aria-label="Première page">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6v12M10 6l8 6-8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-      </button>
-      <button class="jsl-btn" data-act="prev" title="Page précédente" aria-label="Page précédente">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-      </button>
-      <button class="jsl-btn" data-act="next" title="Page suivante" aria-label="Page suivante">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-      </button>
-      <button class="jsl-btn" data-act="last" title="Dernière page" aria-label="Dernière page">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M18 6v12M14 6l-8 6 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-      </button>
+      <button class="jsl-btn" data-act="first" title="Première page" aria-label="Première page">⏮︎</button>
+      <button class="jsl-btn" data-act="prev"  title="Page précédente" aria-label="Page précédente">◀︎</button>
+      <button class="jsl-btn" data-act="next"  title="Page suivante"  aria-label="Page suivante">▶︎</button>
+      <button class="jsl-btn" data-act="last"  title="Dernière page"  aria-label="Dernière page">⏭︎</button>
       <span class="jsl-sep"></span>
-      <button class="jsl-btn jsl-btn-fs" data-act="fs" title="Plein écran" aria-label="Plein écran">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
+      <button class="jsl-btn jsl-btn-fs" data-act="fs" title="Plein écran" aria-label="Plein écran">⤢</button>
     `;
-
     (document.getElementById('app') || document.body).appendChild(bar);
 
-    const dv = Core.documentViewer;
+    // Actions
     bar.addEventListener('click', e => {
       const btn = e.target.closest('.jsl-btn'); if (!btn) return;
       const act = btn.dataset.act;
@@ -129,23 +133,23 @@ window.addEventListener('viewerLoaded', () => {
       const max  = dv.getPageCount ? dv.getPageCount() : 1;
 
       switch (act) {
-        case 'zin':  UI.zoomIn && UI.zoomIn(); break;
-        case 'zout': UI.zoomOut && UI.zoomOut(); break;
+        case 'zin':  setZoom(Math.min(8,  getZoom() * 1.1)); break;
+        case 'zout': setZoom(Math.max(0.25, getZoom() / 1.1)); break;
         case 'first': dv.setCurrentPage && dv.setCurrentPage(1); break;
         case 'prev':  dv.setCurrentPage && dv.setCurrentPage(Math.max(1, page - 1)); break;
         case 'next':  dv.setCurrentPage && dv.setCurrentPage(Math.min(max, page + 1)); break;
         case 'last':  dv.setCurrentPage && dv.setCurrentPage(max); break;
-        case 'fs':    UI.enterFullscreen && UI.enterFullscreen(); break;
+        case 'fs':    enterFullscreen(); break;
       }
     });
   }
 
-  // Monter après chargement du document (sinon l’erreur stoppe tout)
-  if (Core.documentViewer.getDocument()) {
-    mountToolbar();
-  } else {
-    Core.documentViewer.addEventListener('documentLoaded', mountToolbar, { once:true });
-  }
-  // Et remonter si l’UI se recompose
-  new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
+  // Monter la barre quand le doc est prêt (et réessayer si l’UI se recompose)
+  const mount = () => buildToolbar();
+  if (Core.documentViewer.getDocument()) mount();
+  else Core.documentViewer.addEventListener('documentLoaded', mount, { once:true });
+
+  new MutationObserver(mount).observe(document.body, { childList:true, subtree:true });
+  Core.documentViewer.addEventListener('pagesUpdated', mount);
+  Core.documentViewer.addEventListener('layoutChanged', mount);
 });
