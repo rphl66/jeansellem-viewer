@@ -97,3 +97,23 @@ instance.UI.addEventListener(instance.UI.Events.VIEWER_LOADED, () => {
 
   UI.setTheme('light'); // cohérent avec ton skin clair
 });
+// ----- Réglages spécifiques mobile : 1 page à la fois + FitWidth -----
+  const isMobile = matchMedia('(max-width: 768px)').matches;
+
+  Core.documentViewer.addEventListener('documentLoaded', () => {
+    if (!isMobile) return;
+
+    // 1) Une page à la fois
+    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(e) {}
+
+    // 2) Page-by-Page (pas en continu)
+    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch(e) {}
+    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch(e) {}
+
+    // 3) Ajuster l'affichage pour remplir la largeur de l'écran
+    try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e) {}
+
+    // 4) Se placer sur la page 1, au cas où
+    try { Core.documentViewer.setCurrentPage(1); } catch(e) {}
+  });
+});
