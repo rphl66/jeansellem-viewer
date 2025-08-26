@@ -1,77 +1,86 @@
 // =========================================================
-// JEANSELLEM — UIConfig (v25) : header vide + barre flottante
+// JEANSELLEM — UIConfig (UI + barre flottante) v26
 // =========================================================
 window.addEventListener('viewerLoaded', () => {
-  const inst = window.instance;
-  if (!inst || !inst.UI) return;
-  const { UI, Core } = inst;
+  const instance = window.instance;
+  if (!instance || !instance.UI) return;
+  const { UI, Core } = instance;
 
   // --- Badge debug (3 s)
-  (function badge(){
-    const id = 'jsl-debug';
-    if (document.getElementById(id)) return;
+  if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
-    b.id = id;
-    b.textContent = 'JSL UI v25 OK';
-    Object.assign(b.style,{
+    b.id = 'jsl-debug';
+    b.textContent = 'JSL UI v26 OK';
+    Object.assign(b.style, {
       position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
-      background:'#111', color:'#fff', font:'12px monospace',
-      padding:'4px 6px', borderRadius:'6px', opacity:'.85'
+      background:'#222', color:'#fff', font:'12px/1.2 monospace',
+      padding:'4px 6px', borderRadius:'6px', opacity:'0.9'
     });
     document.body.appendChild(b);
-    setTimeout(()=>b.remove(),3000);
-  })();
+    setTimeout(()=> b.remove(), 3000);
+  }
 
-  // --- Verrous de base
+  // ------------------------
+  // 1) Nettoyage de la barre du haut
+  // ------------------------
   try {
     UI.setToolbarGroup && UI.setToolbarGroup(UI.ToolbarGroup.View);
-    UI.setFeatureFlags && UI.setFeatureFlags({
-      disableLocalFilePicker:true,
-      disablePrint:true,
-      disableDownload:true
-    });
-  } catch(_) {}
 
-  // --- Cache tout ce qui ne doit jamais apparaître
-  const HIDE = [
-    // overlays/menus
-    'pageNavOverlay','pageNavigationOverlay',
-    'toolsHeader','toolsOverlay',
-    'notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
-    'searchButton','settingsButton','menuButton','ribbonsDropdownButton',
-    // anciens outils
-    'selectToolButton','textSelectToolButton','panToolButton',
-    'rotateClockwiseButton','rotateCounterClockwiseButton',
-    'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
-    'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
-    'fullscreenButton','myFullscreenButton'
-  ];
-  function hideAll(){
-    try {
-      UI.disableElements && UI.disableElements(HIDE);
-      HIDE.forEach(id => UI.updateElement && UI.updateElement(id,{hidden:true, disabled:true}));
-      UI.closeElements && UI.closeElements(['pageNavOverlay','pageNavigationOverlay','toolsHeader','toolsOverlay']);
-    } catch(_){}
-  }
+    // On vide complètement le header
+    UI.setHeaderItems(h => { h.splice(0, h.length); });
 
-  // --- Vide totalement la barre du haut (pas d’icône du tout)
-  function clearHeader(){
-    try {
-      UI.setHeaderItems(header => {
-        header.getItems().forEach(it => header.delete(it.dataElement));
-      });
-    } catch(_){}
-  }
+    // Cache fort des éléments qu’on ne veut pas (header, overlays, outils…)
+    const HIDE = [
+      // boutons/panels divers
+      'toolbarGroupButton','toolsHeader','toolsOverlay',
+      'notesPanel','notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
+      'ribbonsDropdownButton','menuButton','settingsButton','searchButton',
+      // petit compteur “x/xx”
+      'pageNavOverlay','pageNavigationOverlay',
+      // autres actions
+      'downloadButton','downloadFileButton','printButton','openFileButton','shareButton',
+      'languageButton','themeChangeButton',
+      'selectToolButton','textSelectToolButton','panToolButton',
+      'rotateClockwiseButton','rotateCounterClockwiseButton',
+      'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
+      'fullscreenButton'
+    ];
+    UI.disableElements && UI.disableElements(HIDE);
+    HIDE.forEach(id => UI.updateElement && UI.updateElement(id, { hidden:true, disabled:true }));
+    UI.closeElements && UI.closeElements([
+      'toolsHeader','toolStylePopup','stylePopup',
+      'pageNavOverlay','pageNavigationOverlay'
+    ]);
+  } catch(e){ /* no-op */ }
 
-  // --- Monte/branche la barre flottante
+  // Thème
+  UI.setTheme && UI.setTheme('light');
+
+  // ------------------------
+  // 2) Réglages mobiles au chargement du doc
+  // ------------------------
+  const isMobile = matchMedia('(max-width: 768px)').matches;
+  Core.documentViewer.addEventListener('documentLoaded', () => {
+    if (!isMobile) return;
+    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(e){}
+    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch(e){}
+    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch(e){}
+    try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e){}
+    try { Core.documentViewer.setCurrentPage(1); } catch(e){}
+  });
+
+  // ------------------------
+  // 3) Barre flottante (bas-centre)
+  // ------------------------
   function mountToolbar(){
     if (document.getElementById('jsl-toolbar')) return;
+
     const bar = document.createElement('div');
     bar.id = 'jsl-toolbar';
     bar.className = 'jsl-toolbar';
     bar.innerHTML = `
-      <button class="jsl-btn" data-act="zout" title="Zoom out" aria-label="Zoom out">−</button>
-      <button class="jsl-btn" data-act="zin"  title="Zoom in"  aria-label="Zoom in">+</button>
+      <button class="jsl-btn" data-act="zout" title="Zoom -" aria-label="Zoom moins">−</button>
+      <button class="jsl-btn" data-act="zin"  title="Zoom +" aria-label="Zoom plus">+</button>
       <span class="jsl-sep"></span>
       <button class="jsl-btn" data-act="first" title="Première page" aria-label="Première page">⏮︎</button>
       <button class="jsl-btn" data-act="prev"  title="Page précédente" aria-label="Page précédente">◀︎</button>
@@ -80,6 +89,7 @@ window.addEventListener('viewerLoaded', () => {
       <span class="jsl-sep"></span>
       <button class="jsl-btn jsl-btn-fs" data-act="fs" title="Plein écran" aria-label="Plein écran">⤢</button>
     `;
+
     (document.getElementById('app') || document.body).appendChild(bar);
 
     const dv = Core.documentViewer;
@@ -88,6 +98,7 @@ window.addEventListener('viewerLoaded', () => {
       const act = btn.dataset.act;
       const page = dv.getCurrentPage ? dv.getCurrentPage() : 1;
       const max  = dv.getPageCount ? dv.getPageCount() : 1;
+
       switch (act) {
         case 'zin':  UI.zoomIn && UI.zoomIn(); break;
         case 'zout': UI.zoomOut && UI.zoomOut(); break;
@@ -100,26 +111,22 @@ window.addEventListener('viewerLoaded', () => {
     });
   }
 
-  // --- Appliquer maintenant + surveiller les recompositions
-  function applyAll(){ hideAll(); clearHeader(); mountToolbar(); }
-  applyAll();
-  setTimeout(applyAll, 150);
-  setTimeout(applyAll, 500);
+  // -- monte (ou remonte) la barre flottante de façon obstinée
+  function ensureToolbarMounted() {
+    if (!document.getElementById('jsl-toolbar')) {
+      mountToolbar();
+    }
+  }
+  ensureToolbarMounted();
 
-  const obs = new MutationObserver(applyAll);
-  obs.observe(document.body, { childList:true, subtree:true, attributes:true });
-
-  // --- Mobile : couverture + scroll par page + FitWidth
-  const isMobile = matchMedia('(max-width: 768px)').matches;
-  Core.documentViewer.addEventListener('documentLoaded', () => {
-    if (!isMobile) return;
-    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(_){}
-    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch(_){}
-    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch(_){}
-    try { UI.setFitMode(UI.FitMode.FitWidth); } catch(_){}
-    try { Core.documentViewer.setCurrentPage(1); } catch(_){}
-    applyAll();
+  // 1) au chargement du doc
+  Core.documentViewer.addEventListener('documentLoaded', ensureToolbarMounted);
+  // 2) si le DOM du viewer est reconstruit
+  new MutationObserver(ensureToolbarMounted).observe(document.body, { childList:true, subtree:true });
+  // 3) petits rappels au cas où (éditeur Squarespace recrée des nœuds)
+  setTimeout(ensureToolbarMounted, 600);
+  setTimeout(ensureToolbarMounted, 1500);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) setTimeout(ensureToolbarMounted, 250);
   });
-
-  UI.setTheme && UI.setTheme('light');
 });
