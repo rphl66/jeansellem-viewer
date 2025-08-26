@@ -1,86 +1,70 @@
-// ---------------------------------------------------------
-// JEANSELLEM — UIConfig (v23)
-// Nettoyage barre du haut + cache le compteur de pages
-// + barre flottante interne
-// ---------------------------------------------------------
+// =========================================================
+// JEANSELLEM — UIConfig (UI minimal + barre flottante) v24
+// =========================================================
 window.addEventListener('viewerLoaded', () => {
-  const { UI, Core } = window.instance;
+  const inst = window.instance;
+  if (!inst || !inst.UI || !inst.Core) return;
+  const { UI, Core } = inst;
 
-  // Badge debug 3 s (optionnel)
+  // Badge debug 3s
   if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
     b.id = 'jsl-debug';
-    b.textContent = 'JSL UI v23 OK';
+    b.textContent = 'JSL UI v24 OK';
     Object.assign(b.style, {
       position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
       background:'#111', color:'#fff', font:'12px/1.2 monospace',
       padding:'4px 6px', borderRadius:'6px', opacity:'0.85'
     });
-    document.body.appendChild(b);
-    setTimeout(()=> b.remove(), 3000);
+    document.body.appendChild(b); setTimeout(()=>b.remove(),3000);
   }
 
-  // Réglages de base
-  UI.setToolbarGroup && UI.setToolbarGroup(UI.ToolbarGroup.View);
+  // Mode "View" et verrous
+  UI.setToolbarGroup?.(UI.ToolbarGroup.View);
   UI.setFeatureFlags?.({
     disableLocalFilePicker: true,
     disablePrint: true,
     disableDownload: true,
   });
 
-  // Tout ce qu’on masque (barre du haut + overlay pages)
+  // A masquer partout (loupe, commentaires, roue, menus, annotate, pager x/xx, zoom du header, etc.)
   const HIDE = [
-    'downloadButton','downloadFileButton','printButton',
-    'themeChangeButton','languageButton',
-    'selectToolButton','textSelectToolButton','panToolButton',
-    'rotateClockwiseButton','rotateCounterClockwiseButton',
-    'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
-    'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
-    'fullscreenButton',                         // ancien FS par défaut
-
-    // haut-droite inutiles
-    'searchButton',
-    'toggleNotesButton','toggleNotesPanelButton','notesPanelButton',
+    'searchButton','toggleNotesButton','toggleNotesPanelButton','notesPanelButton',
     'settingsButton','menuButton','ribbonsDropdownButton',
-
-    // petit overlay pagination “x/xx”
-    'pageNavOverlay','pageNavigationOverlay'
+    'toolsHeader','toolsOverlay','toolbarGroupButton',
+    'toolbarGroup-Annotate','toolbarGroup-Edit','toolbarGroup-Forms',
+    'toolbarGroup-Insert','toolbarGroup-Measure','toolbarGroup-Shapes',
+    'pageNavOverlay','pageNavigationOverlay',
+    'fullscreenButton',
+    // boutons de zoom du header (on ne garde rien en haut)
+    'zoomOutButton','zoomInButton','zoomDropdown'
   ];
+  const applyHides = () => {
+    try {
+      UI.disableElements(HIDE);
+      HIDE.forEach(id => UI.updateElement?.(id, { hidden:true, disabled:true }));
+      UI.closeElements?.(['pageNavOverlay','pageNavigationOverlay','toolsHeader','toolsOverlay']);
+    } catch {}
+  };
+  applyHides();
 
-  try {
-    UI.disableElements(HIDE);
-    HIDE.forEach(id => UI.updateElement?.(id, { hidden:true, disabled:true }));
-    UI.closeElements?.(['pageNavOverlay','pageNavigationOverlay']);
-  } catch(e){}
+  // Barre du haut : on la vide complètement (pas de zoom, pas d’autres boutons)
+  UI.setHeaderItems(header => { header.splice(0, header.length); });
 
-  // Barre du haut : zoom -, %, + + bouton FS personnalisé
-  const fsSVG =
-    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-    '<path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
-    '<path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-
-  UI.setHeaderItems(header => {
-    header.length = 0; // on repart propre
-    header.push(
-      { type:'zoomOutButton' },
-      { type:'zoomDropdown' },
-      { type:'zoomInButton' },
-      { type:'actionButton', dataElement:'myFullscreenButton', title:'Plein écran', img: fsSVG,
-        onClick: () => UI.enterFullscreen() }
-    );
-  });
-
+  // Thème
   UI.setTheme('light');
 
-  // Mobile : couverture + page-by-page + FitWidth
+  // Mobile : couverture + défilement page à page + FitWidth
   const isMobile = matchMedia('(max-width: 768px)').matches;
   Core.documentViewer.addEventListener('documentLoaded', () => {
-    if (!isMobile) return;
-    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(e){}
-    try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(e){}
-    try { UI.setPageTransitionMode?.(UI.PageTransitionMode.PAGE); } catch(e){}
-    try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e){}
-    try { Core.documentViewer.setCurrentPage(1); } catch(e){}
+    applyHides();
+    if (isMobile) {
+      try { UI.setLayoutMode(UI.LayoutMode.Single); } catch{}
+      try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch{}
+      try { UI.setPageTransitionMode?.(UI.PageTransitionMode.PAGE); } catch{}
+      try { UI.setFitMode(UI.FitMode.FitWidth); } catch{}
+      try { Core.documentViewer.setCurrentPage(1); } catch{}
+    }
   });
 
   // ===== Barre flottante (bas-centre) =====
@@ -122,8 +106,9 @@ window.addEventListener('viewerLoaded', () => {
     });
   }
   mountToolbar();
-  new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
 
-  // Ceinture + bretelles : re-masquer le pager après recomposition
-  setTimeout(() => UI.disableElements?.(['pageNavOverlay','pageNavigationOverlay']), 300);
+  // Re-appliquer si l’UI se recompose
+  const root = UI.getRootElement?.();
+  if (root) new MutationObserver(() => { applyHides(); mountToolbar(); })
+    .observe(root, { childList:true, subtree:true });
 });
