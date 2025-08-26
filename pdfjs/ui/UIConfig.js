@@ -1,12 +1,12 @@
-// =========================================================
-// JEANSELLEM — UIConfig (UI + barre flottante interne) v23
-// =========================================================
+// ---------------------------------------------------------
+// JEANSELLEM — UIConfig (v23)
+// Nettoyage barre du haut + cache le compteur de pages
+// + barre flottante interne
+// ---------------------------------------------------------
 window.addEventListener('viewerLoaded', () => {
-  const instance = window.instance;
-  if (!instance || !instance.UI) return;
-  const { UI, Core } = instance;
+  const { UI, Core } = window.instance;
 
-  // Badge debug 3 s (peut être retiré)
+  // Badge debug 3 s (optionnel)
   if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
     b.id = 'jsl-debug';
@@ -20,37 +20,57 @@ window.addEventListener('viewerLoaded', () => {
     setTimeout(()=> b.remove(), 3000);
   }
 
-  // Verrous
+  // Réglages de base
   UI.setToolbarGroup && UI.setToolbarGroup(UI.ToolbarGroup.View);
   UI.setFeatureFlags?.({
     disableLocalFilePicker: true,
     disablePrint: true,
-    disableDownload: true
+    disableDownload: true,
   });
 
-  // ► Cacher boutons "inutiles" en haut + le pager “6/19”
-  const HIDE_TOP = [
-    // haut-droite
+  // Tout ce qu’on masque (barre du haut + overlay pages)
+  const HIDE = [
+    'downloadButton','downloadFileButton','printButton',
+    'themeChangeButton','languageButton',
+    'selectToolButton','textSelectToolButton','panToolButton',
+    'rotateClockwiseButton','rotateCounterClockwiseButton',
+    'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
+    'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
+    'fullscreenButton',                         // ancien FS par défaut
+
+    // haut-droite inutiles
     'searchButton',
-    'toggleNotesButton','notesPanelButton',
+    'toggleNotesButton','toggleNotesPanelButton','notesPanelButton',
     'settingsButton','menuButton','ribbonsDropdownButton',
-    // notre ancien FS d’en-tête (on garde celui de la barre flottante)
-    'myFullscreenButton',
-    // petit overlay de pagination “6/19”
+
+    // petit overlay pagination “x/xx”
     'pageNavOverlay','pageNavigationOverlay'
   ];
+
   try {
-    UI.disableElements(HIDE_TOP);
-    HIDE_TOP.forEach(id => UI.updateElement?.(id, { hidden:true, disabled:true }));
-    // ferme d’éventuels popups
+    UI.disableElements(HIDE);
+    HIDE.forEach(id => UI.updateElement?.(id, { hidden:true, disabled:true }));
     UI.closeElements?.(['pageNavOverlay','pageNavigationOverlay']);
   } catch(e){}
 
-  // Réordonner les contrôles zoom du header (on les garde)
+  // Barre du haut : zoom -, %, + + bouton FS personnalisé
+  const fsSVG =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+    '<path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
+    '<path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+
   UI.setHeaderItems(header => {
-    // on force juste l’ordre zoom-, %, zoom+ ; rien d’autre n’est ajouté
-    header.push({ type:'zoomOutButton' },{ type:'zoomDropdown' },{ type:'zoomInButton' });
+    header.length = 0; // on repart propre
+    header.push(
+      { type:'zoomOutButton' },
+      { type:'zoomDropdown' },
+      { type:'zoomInButton' },
+      { type:'actionButton', dataElement:'myFullscreenButton', title:'Plein écran', img: fsSVG,
+        onClick: () => UI.enterFullscreen() }
+    );
   });
+
+  UI.setTheme('light');
 
   // Mobile : couverture + page-by-page + FitWidth
   const isMobile = matchMedia('(max-width: 768px)').matches;
@@ -62,8 +82,6 @@ window.addEventListener('viewerLoaded', () => {
     try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e){}
     try { Core.documentViewer.setCurrentPage(1); } catch(e){}
   });
-
-  UI.setTheme('light');
 
   // ===== Barre flottante (bas-centre) =====
   function mountToolbar(){
@@ -105,4 +123,7 @@ window.addEventListener('viewerLoaded', () => {
   }
   mountToolbar();
   new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
+
+  // Ceinture + bretelles : re-masquer le pager après recomposition
+  setTimeout(() => UI.disableElements?.(['pageNavOverlay','pageNavigationOverlay']), 300);
 });
