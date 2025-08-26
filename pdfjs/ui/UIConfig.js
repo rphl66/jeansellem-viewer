@@ -53,7 +53,7 @@ window.addEventListener('viewerLoaded', () => {
     Object.assign(bar.style, {
       position:'fixed',
       left:'50%',
-      bottom:'calc(16px + env(safe-area-inset-bottom, 0px))',
+      bottom:'calc(36px + env(safe-area-inset-bottom, 0px))',
       transform:'translateX(-50%)',
       display:'inline-flex',
       alignItems:'center',
