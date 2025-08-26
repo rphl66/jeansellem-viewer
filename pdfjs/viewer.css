@@ -193,4 +193,26 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 @media (max-width: 768px){
   #jsl-toolbar.jsl-toolbar{ bottom: 16px; --tlb-btn-size: 34px; }
 }
+/* Filet de sécurité : si la UI rouvre la barre d’annotation, on la masque */
+[data-element="toolsHeader"],
+[data-element="toolsOverlay"],
+.toolsHeader,
+.toolsOverlay {
+  display: none !important;
+}
+
+/* Évite que la barre flottante chevauche le pager (on le décale un peu) */
+[data-element="pageNavOverlay"],
+[data-element="pageNavigationOverlay"],
+.PageNavOverlay,
+.pageNavOverlay {
+  margin-bottom: 56px !important; /* espace pour #jsl-toolbar */
+}
+
+/* iOS : respect du safe-area en bas (barre maison) */
+@supports (padding: max(0px)) {
+  #jsl-toolbar.jsl-toolbar {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+}
 
