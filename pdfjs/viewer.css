@@ -13,8 +13,8 @@
   /* Boutons génériques */
   --btn-bg: #ffffff;
   --btn-bg-hover: #f2f2f2;
-  --btn-bg-active: #3a86ff;
-  --btn-radius: 10px;
+  --btn-bg-active: #ffffff;
+  --btn-radius: 8px;
 
   /* Espacement toolbar */
   --toolbar-gap: 12px;
