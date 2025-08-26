@@ -1,42 +1,101 @@
 // =========================================================
-// JEANSELLEM — UIConfig (UI + barre flottante interne) v16
+// JEANSELLEM — UIConfig (UI + barre flottante interne) v21
 // =========================================================
-
 window.addEventListener('viewerLoaded', () => {
   const instance = window.instance;
+  if (!instance || !instance.UI) return;
   const { UI, Core } = instance;
 
-  // --- Badge debug (disparaît après 3s)
+  // --- Badge debug 3 s
   if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
     b.id = 'jsl-debug';
-    b.textContent = 'JSL UI v16 OK';
+    b.textContent = 'JSL UI v21 OK';
     Object.assign(b.style, {
       position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
       background:'#111', color:'#fff', font:'12px/1.2 monospace',
       padding:'4px 6px', borderRadius:'6px', opacity:'0.85'
     });
     document.body.appendChild(b);
-    setTimeout(() => b.remove(), 3000);
+    setTimeout(()=> b.remove(), 3000);
   }
 
-  // Verrous
-  UI.setFeatureFlags({ disableLocalFilePicker:true, disablePrint:true, disableDownload:true });
+  // --- Verrous
+  UI.setFeatureFlags({
+    disableLocalFilePicker: true,
+    disablePrint: true,
+    disableDownload: true
+  });
 
-  // Masquages
-  UI.disableElements([
+  // 1) Toujours rester sur le groupe "View"
+  const forceViewGroup = () => {
+    try { UI.setToolbarGroup(UI.ToolbarGroup.View); } catch(e){}
+  };
+  forceViewGroup();
+
+  // 2) Masquer tout ce qui est Annotate & co (IDs courants + filet CSS + fallback texte)
+  const HIDE_IDS = [
+    // boutons classiques déjà masqués chez toi
     'downloadButton','downloadFileButton','printButton',
     'themeChangeButton','languageButton',
     'selectToolButton','textSelectToolButton','panToolButton',
     'rotateClockwiseButton','rotateCounterClockwiseButton',
     'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
     'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
-    'fullscreenButton'
-  ]);
+    'fullscreenButton',
 
-  // Bouton FS dans la barre native (optionnel)
-  UI.setHeaderItems(h => {
-    h.push(
+    // barres/groupes d’annotation
+    'toolbarGroupButton',
+    'toolbarGroup-Annotate','toolbarGroup-Edit','toolbarGroup-Forms',
+    'toolbarGroup-Insert','toolbarGroup-Measure','toolbarGroup-Shapes',
+    'toolsHeader','toolsOverlay',
+    'toolStylePopup','stylePopup','annotationStylePopup',
+    'notesPanelButton','toggleNotesButton','toggleNotesPanelButton','commentsPanelButton'
+  ];
+  const applyHides = () => {
+    try {
+      UI.disableElements(HIDE_IDS);
+      HIDE_IDS.forEach(id => UI.updateElement(id, { hidden:true, disabled:true }));
+      UI.closeElements && UI.closeElements(['toolsHeader','toolStylePopup','stylePopup']);
+    } catch(e){}
+    // filet CSS ultra-robuste (dans l’iframe UI)
+    if (!document.getElementById('jsl-killcss')) {
+      const s = document.createElement('style');
+      s.id = 'jsl-killcss';
+      s.textContent = `
+        [data-element="toolbarGroupButton"],
+        [data-element^="toolbarGroup-"],
+        [data-element="toolsHeader"],
+        [data-element="toolStylePopup"],
+        [data-element="stylePopup"],
+        [data-element="annotationStylePopup"],
+        [data-element="toggleNotesButton"],
+        [data-element="notesPanelButton"],
+        [data-element="toggleNotesPanelButton"],
+        [data-element="commentsPanelButton"]{
+          display:none !important;
+        }
+        /* Par sécurité, si un libellé 'Annotate' fuit */
+        button, [role="button"] { }
+      `;
+      document.head.appendChild(s);
+    }
+    forceViewGroup();
+  };
+  applyHides();
+
+  // Reappliquer quand l’UI se recompose ou à l’ouverture de menus
+  const root = UI.getRootElement && UI.getRootElement();
+  if (root) new MutationObserver(applyHides).observe(root, { childList:true, subtree:true, attributes:true });
+  document.addEventListener('click', ()=> setTimeout(applyHides, 0), true);
+  document.addEventListener('keydown', ()=> setTimeout(applyHides, 0), true);
+
+  // 3) Aucune tool d’annotation active
+  try { UI.setToolMode && UI.setToolMode(Core.Tools.ToolNames.PAN); } catch(e){}
+
+  // 4) Bouton plein écran natif dans la barre, après zooms
+  UI.setHeaderItems(header => {
+    header.push(
       { type:'zoomOutButton' },
       { type:'zoomDropdown' },
       { type:'zoomInButton' },
@@ -50,7 +109,7 @@ window.addEventListener('viewerLoaded', () => {
     );
   });
 
-  // Mobile : couverture + page-by-page + FitWidth
+  // 5) Mobile : couverture + page-by-page + FitWidth
   const isMobile = matchMedia('(max-width: 768px)').matches;
   Core.documentViewer.addEventListener('documentLoaded', () => {
     if (!isMobile) return;
@@ -63,8 +122,8 @@ window.addEventListener('viewerLoaded', () => {
 
   UI.setTheme('light');
 
-  // ---- BARRE FLOTTANTE interne ----
-  function mountToolbar(){
+  // 6) BARRE FLOTTANTE (dans l’iframe)
+  function mountToolbar() {
     if (document.getElementById('jsl-toolbar')) return;
 
     const bar = document.createElement('div');
@@ -97,8 +156,8 @@ window.addEventListener('viewerLoaded', () => {
         </svg>
       </button>
     `;
-
     (document.getElementById('app') || document.body).appendChild(bar);
+    console.log('✅ Barre flottante montée');
 
     const dv = Core.documentViewer;
     bar.addEventListener('click', e => {
@@ -118,6 +177,9 @@ window.addEventListener('viewerLoaded', () => {
       }
     });
   }
+  // Monter maintenant + re-monter après recompositions & après chargement doc
   mountToolbar();
-  new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
+  setTimeout(mountToolbar, 500);
+  Core.documentViewer.addEventListener('documentLoaded', ()=> setTimeout(mountToolbar, 0));
+  if (root) new MutationObserver(()=> setTimeout(mountToolbar,0)).observe(root, { childList:true, subtree:true });
 });
