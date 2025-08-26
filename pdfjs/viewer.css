@@ -102,13 +102,20 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 [data-element="toolbarGroupButton"]{
   display:none !important;
 }
+/* Vider visuellement la barre du haut (on garde juste le fond blanc) */
+.Header .Button,
+.Header [data-element],
+[data-element="toolsHeader"],
+[data-element="toolsOverlay"]{
+  display: none !important;
+}
 
-/* Supprimer complètement le petit overlay “x/xx” (pager) */
+/* Supprimer complètement le mini-overlay “x/xx” */
 [data-element="pageNavOverlay"],
 [data-element="pageNavigationOverlay"],
 .PageNavOverlay,
-.pageNavOverlay {
-  display: none !important;
+.pageNavOverlay { display: none !important; }
+
 }
 
 /* ---------- Barre flottante (interne au viewer) ---------- */
