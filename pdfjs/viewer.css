@@ -111,13 +111,14 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   border: 1px solid rgba(0,0,0,.06) !important;
 }
 
-/* Supprimer le petit overlay “6/19” */
+/* Supprimer complètement le petit overlay “x/xx” */
 [data-element="pageNavOverlay"],
 [data-element="pageNavigationOverlay"],
 .PageNavOverlay,
 .pageNavOverlay {
   display: none !important;
 }
+
 /* ===== Barre flottante (overlay interne au viewer) ===== */
 :root{
   --tlb-bg: rgba(255,255,255,0.95);   /* Fond de la barre */
