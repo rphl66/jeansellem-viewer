@@ -1,1 +1,122 @@
-!function(e){var t={};function n(o){if(t[o])return t[o].exports;var r=t[o]={i:o,l:!1,exports:{}};return e[o].call(r.exports,r,r.exports,n),r.l=!0,r.exports}n.m=e,n.c=t,n.d=function(e,t,o){n.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:o})},n.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},n.t=function(e,t){if(1&t&&(e=n(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var o=Object.create(null);if(n.r(o),Object.defineProperty(o,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var r in e)n.d(o,r,function(t){return e[t]}.bind(null,r));return o},n.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return n.d(t,"a",t),t},n.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},n.p="/core/pdfjs/",n(n.s=0)}([function(e,t,n){e.exports=n(1)},function(e,t){window.isPdfjs=!0,window.addEventListener("viewerLoaded",(function(){var e=window.instance,t=e.UI.Feature;e.UI.disableElements(["cropToolButton","thumbnailControl","documentControl","toolbarGroup-Edit","toolbarGroup-Forms"]),e.UI.disableFeatures([e.UI.Feature.Annotations,e.UI.Feature.Ribbons]),e.UI.disableElements(["ribbons","thumbnailControl","documentControl","outlinesPanelButton","textHighlightToolButton","textUnderlineToolButton","textSquigglyToolButton","textStrikeoutToolButton"]),e.UI.disableFeatures([t.ThumbnailMerging,t.ThumbnailReordering,t.ThumbnailMultiselect,t.LocalStorage])}))}]);
+// =========================================================
+// JEANSELLEM — UIConfig (UI + barre flottante interne) v17
+// =========================================================
+window.addEventListener('viewerLoaded', () => {
+  const instance = window.instance;
+  if (!instance || !instance.UI) return;
+
+  const { UI, Core } = instance;
+
+  // --- Badge debug (3 s)
+  if (!document.getElementById('jsl-debug')) {
+    const b = document.createElement('div');
+    b.id = 'jsl-debug';
+    b.textContent = 'JSL UI v17 OK';
+    Object.assign(b.style, {
+      position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
+      background:'#111', color:'#fff', font:'12px/1.2 monospace',
+      padding:'4px 6px', borderRadius:'6px', opacity:'0.85'
+    });
+    document.body.appendChild(b);
+    setTimeout(()=> b.remove(), 3000);
+  }
+
+  // Verrous / masquages
+  UI.setFeatureFlags({ disableLocalFilePicker:true, disablePrint:true, disableDownload:true });
+  UI.disableElements([
+    'downloadButton','downloadFileButton','printButton',
+    'themeChangeButton','languageButton',
+    'selectToolButton','textSelectToolButton','panToolButton',
+    'rotateClockwiseButton','rotateCounterClockwiseButton',
+    'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
+    'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
+    'fullscreenButton'
+  ]);
+
+  // (optionnel) bouton FS dans la barre native
+  UI.setHeaderItems(h => {
+    h.push(
+      { type:'zoomOutButton' },
+      { type:'zoomDropdown' },
+      { type:'zoomInButton' },
+      {
+        type:'actionButton',
+        dataElement:'myFullscreenButton',
+        title:'Full screen',
+        img:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+        onClick: () => UI.enterFullscreen()
+      }
+    );
+  });
+
+  // Mobile : couverture + page-by-page + FitWidth
+  const isMobile = matchMedia('(max-width: 768px)').matches;
+  Core.documentViewer.addEventListener('documentLoaded', () => {
+    if (!isMobile) return;
+    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(e){}
+    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch(e){}
+    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch(e){}
+    try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e){}
+    try { Core.documentViewer.setCurrentPage(1); } catch(e){}
+  });
+
+  UI.setTheme('light');
+
+  // ---- BARRE FLOTTANTE interne (dans l’iframe)
+  function mountToolbar(){
+    if (document.getElementById('jsl-toolbar')) return;
+
+    const bar = document.createElement('div');
+    bar.id = 'jsl-toolbar';
+    bar.className = 'jsl-toolbar';
+    bar.innerHTML = `
+      <button class="jsl-btn" data-act="zout" title="Zoom out" aria-label="Zoom out">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="jsl-btn" data-act="zin" title="Zoom in" aria-label="Zoom in">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <span class="jsl-sep"></span>
+      <button class="jsl-btn" data-act="first" title="Première page" aria-label="Première page">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6v12M10 6l8 6-8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </button>
+      <button class="jsl-btn" data-act="prev" title="Page précédente" aria-label="Page précédente">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </button>
+      <button class="jsl-btn" data-act="next" title="Page suivante" aria-label="Page suivante">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </button>
+      <button class="jsl-btn" data-act="last" title="Dernière page" aria-label="Dernière page">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M18 6v12M14 6l-8 6 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </button>
+      <span class="jsl-sep"></span>
+      <button class="jsl-btn jsl-btn-fs" data-act="fs" title="Plein écran" aria-label="Plein écran">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    `;
+
+    (document.getElementById('app') || document.body).appendChild(bar);
+
+    const dv = Core.documentViewer;
+    bar.addEventListener('click', e => {
+      const btn = e.target.closest('.jsl-btn');
+      if (!btn) return;
+      const act = btn.dataset.act;
+      const page = dv.getCurrentPage ? dv.getCurrentPage() : 1;
+      const max  = dv.getPageCount ? dv.getPageCount() : 1;
+      switch (act) {
+        case 'zin':  UI.zoomIn && UI.zoomIn(); break;
+        case 'zout': UI.zoomOut && UI.zoomOut(); break;
+        case 'first': dv.setCurrentPage && dv.setCurrentPage(1); break;
+        case 'prev':  dv.setCurrentPage && dv.setCurrentPage(Math.max(1, page - 1)); break;
+        case 'next':  dv.setCurrentPage && dv.setCurrentPage(Math.min(max, page + 1)); break;
+        case 'last':  dv.setCurrentPage && dv.setCurrentPage(max); break;
+        case 'fs':    UI.enterFullscreen && UI.enterFullscreen(); break;
+      }
+    });
+  }
+  mountToolbar();
+  new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
+});
