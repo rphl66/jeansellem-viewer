@@ -1,53 +1,34 @@
 // =========================================================
-// JEANSELLEM — UIConfig (UI + barre flottante obstinée) v27
+// JEANSELLEM — PDF Viewer UIConfig (final, sans debug)
 // =========================================================
 window.addEventListener('viewerLoaded', () => {
-  const instance = window.instance;
-  if (!instance || !instance.UI) return;
-  const { UI, Core } = instance;
+  const { UI, Core } = window.instance;
 
-  // --- Badge debug (3 s) -------------------------------
+  // --- Désactivation des éléments inutiles ---
+  const HIDE = [
+    'downloadButton','downloadFileButton','printButton',
+    'themeChangeButton','languageButton',
+    'selectToolButton','textSelectToolButton','panToolButton',
+    'rotateClockwiseButton','rotateCounterClockwiseButton',
+    'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
+    'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
+    'fullscreenButton',
+    'searchButton','toggleNotesButton','notesPanelButton','settingsButton',
+    'menuButton','ribbonsDropdownButton',
+    'pageNavOverlay','pageNavigationOverlay'
+  ];
   try {
-    const id = 'jsl-debug';
-    if (!document.getElementById(id)) {
-      const b = document.createElement('div');
-      b.id = id;
-      b.textContent = 'JSL UI v27 OK';
-      Object.assign(b.style, {
-        position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
-        background:'#222', color:'#fff', font:'12px/1.2 monospace',
-        padding:'4px 6px', borderRadius:'6px', opacity:'0.9'
-      });
-      document.body.appendChild(b);
-      setTimeout(()=> b.remove(), 3000);
-    }
-  } catch(e){}
-
-  // --- Nettoyage total de la barre du haut --------------
-  try {
-    UI.setToolbarGroup && UI.setToolbarGroup(UI.ToolbarGroup.View);
-    UI.setHeaderItems(h => { h.splice(0, h.length); });
-
-    const HIDE = [
-      'toolbarGroupButton','toolsHeader','toolsOverlay',
-      'notesPanel','notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
-      'ribbonsDropdownButton','menuButton','settingsButton','searchButton',
-      'pageNavOverlay','pageNavigationOverlay',
-      'downloadButton','downloadFileButton','printButton','openFileButton','shareButton',
-      'languageButton','themeChangeButton',
-      'selectToolButton','textSelectToolButton','panToolButton',
-      'rotateClockwiseButton','rotateCounterClockwiseButton',
-      'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
-      'fullscreenButton'
-    ];
-    UI.disableElements && UI.disableElements(HIDE);
+    UI.disableElements(HIDE);
     HIDE.forEach(id => UI.updateElement?.(id, { hidden:true, disabled:true }));
-    UI.closeElements?.(['toolsHeader','toolStylePopup','stylePopup','pageNavOverlay','pageNavigationOverlay']);
+    UI.closeElements?.(['pageNavOverlay','pageNavigationOverlay']);
   } catch(e){}
 
-  UI.setTheme?.('light');
+  // --- Supprimer les items de header (vide) ---
+  try {
+    UI.setHeaderItems(() => []);   // barre du haut = vide
+  } catch(e){}
 
-  // --- Réglages mobiles à l’ouverture du PDF ------------
+  // --- Mode mobile : plein écran page simple ---
   const isMobile = matchMedia('(max-width: 768px)').matches;
   Core.documentViewer.addEventListener('documentLoaded', () => {
     if (!isMobile) return;
@@ -58,117 +39,60 @@ window.addEventListener('viewerLoaded', () => {
     try { Core.documentViewer.setCurrentPage(1); } catch(e){}
   });
 
-  // --- BARRE FLOTTANTE (avec styles inline) -------------
+  UI.setTheme('light');
+
+  // =========================================================
+  // Barre flottante personnalisée
+  // =========================================================
   function mountToolbar(){
     if (document.getElementById('jsl-toolbar')) return;
 
     const bar = document.createElement('div');
     bar.id = 'jsl-toolbar';
-    // style container
-    Object.assign(bar.style, {
-      position:'fixed',
-      left:'50%',
-      bottom:'calc(16px + env(safe-area-inset-bottom, 0px))',
-      transform:'translateX(-50%)',
-      display:'inline-flex',
-      alignItems:'center',
-      gap:'10px',
-      padding:'8px 12px',
-      background:'rgba(255,255,255,0.95)',
-      color:'#000',
-      borderRadius:'10px',
-      boxShadow:'0 6px 16px rgba(0,0,0,.15)',
-      border:'1px solid rgba(0,0,0,.08)',
-      zIndex:'2147483647',
-      backdropFilter:'blur(6px)',
-      WebkitBackdropFilter:'blur(6px)'
-    });
-
-    // fabrique un bouton
-    const mkBtn = (label, act) => {
-      const btn = document.createElement('button');
-      btn.className = 'jsl-btn';
-      btn.dataset.act = act;
-      btn.textContent = label;
-      Object.assign(btn.style, {
-        width:'36px', height:'36px',
-        display:'inline-flex', alignItems:'center', justifyContent:'center',
-        background:'transparent', color:'inherit',
-        border:'0', borderRadius:'8px', cursor:'pointer', fontSize:'16px'
-      });
-      btn.onmouseenter = () => btn.style.background = 'rgba(0,0,0,.06)';
-      btn.onmouseleave = () => btn.style.background = 'transparent';
-      return btn;
-    };
-
-    const sep = () => {
-      const s = document.createElement('span');
-      Object.assign(s.style, { width:'1px', height:'24px', background:'rgba(0,0,0,.15)', margin:'0 4px' });
-      return s;
-    };
-
-    // boutons
-    const btns = [
-      mkBtn('−','zout'),
-      mkBtn('+','zin'),
-      sep(),
-      mkBtn('⏮︎','first'),
-      mkBtn('◀︎','prev'),
-      mkBtn('▶︎','next'),
-      mkBtn('⏭︎','last'),
-      sep(),
-      (()=>{ const b=mkBtn('⤢','fs'); b.style.background='#000'; b.style.color='#fff'; return b; })(),
-    ];
-    btns.forEach(b => bar.appendChild(b));
-
+    bar.className = 'jsl-toolbar';
+    bar.innerHTML = `
+      <button class="jsl-btn" data-act="zout" title="Zoom out" aria-label="Zoom out">−</button>
+      <button class="jsl-btn" data-act="zin"  title="Zoom in"  aria-label="Zoom in">+</button>
+      <span class="jsl-sep"></span>
+      <button class="jsl-btn" data-act="first" title="Première page" aria-label="Première page">⏮︎</button>
+      <button class="jsl-btn" data-act="prev"  title="Page précédente" aria-label="Page précédente">◀︎</button>
+      <button class="jsl-btn" data-act="next"  title="Page suivante"  aria-label="Page suivante">▶︎</button>
+      <button class="jsl-btn" data-act="last"  title="Dernière page"  aria-label="Dernière page">⏭︎</button>
+      <span class="jsl-sep"></span>
+      <button class="jsl-btn jsl-btn-fs" data-act="fs" title="Plein écran" aria-label="Plein écran">⤢</button>
+    `;
     (document.getElementById('app') || document.body).appendChild(bar);
-    console.debug('[JSL] Barre flottante montée');
 
-    // actions (Core pour éviter toute promesse cross-domain)
     const dv = Core.documentViewer;
-    const zoomStep = 1.1;
-
     bar.addEventListener('click', e => {
       const btn = e.target.closest('.jsl-btn'); if (!btn) return;
       const act = btn.dataset.act;
-      const page = dv.getCurrentPage ? dv.getCurrentPage() : 1;
-      const max  = dv.getPageCount ? dv.getPageCount() : 1;
+      const page = dv.getCurrentPage?.() || 1;
+      const max  = dv.getPageCount?.() || 1;
 
-      try {
-        switch (act) {
-          case 'zin':  dv.zoomTo(dv.getZoomLevel() * zoomStep); break;
-          case 'zout': dv.zoomTo(dv.getZoomLevel() / zoomStep); break;
-          case 'first': dv.setCurrentPage?.(1); break;
-          case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
-          case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
-          case 'last':  dv.setCurrentPage?.(max); break;
-          case 'fs':
-            (UI.enterFullscreen && UI.enterFullscreen())
-              || document.documentElement.requestFullscreen?.();
-            break;
-        }
-      } catch(err){
-        console.warn('[JSL] Action toolbar erreur:', act, err);
+      switch (act) {
+        case 'zin':  UI.zoomIn?.(); break;
+        case 'zout': UI.zoomOut?.(); break;
+        case 'first': dv.setCurrentPage?.(1); break;
+        case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
+        case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
+        case 'last':  dv.setCurrentPage?.(max); break;
+        case 'fs':    UI.enterFullscreen?.(); break;
       }
     });
   }
 
-  // --- Remontage obstiné --------------------------------
+  // Montage obstiné (si DOM reconstruit par Squarespace)
   function ensureToolbarMounted() {
-    if (!document.getElementById('jsl-toolbar')) mountToolbar();
+    if (!document.getElementById('jsl-toolbar')) {
+      mountToolbar();
+    }
   }
-
-  // 1) maintenant
   ensureToolbarMounted();
-  // 2) à l’ouverture d’un doc
   Core.documentViewer.addEventListener('documentLoaded', ensureToolbarMounted);
-  // 3) si le DOM change (ex: éditeur Squarespace)
-  new MutationObserver(ensureToolbarMounted).observe(document.body, { childList:true, subtree:true });
-  // 4) rappels
+  new MutationObserver(ensureToolbarMounted).observe(document.body, { childList: true, subtree: true });
   setTimeout(ensureToolbarMounted, 600);
   setTimeout(ensureToolbarMounted, 1500);
-  const id = setInterval(ensureToolbarMounted, 2000);
-  setTimeout(() => clearInterval(id), 20000); // on arrête après 20s
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) setTimeout(ensureToolbarMounted, 250);
   });
