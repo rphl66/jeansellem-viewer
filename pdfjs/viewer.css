@@ -230,4 +230,14 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 @supports (padding: max(0px)) {
   #jsl-toolbar.jsl-toolbar { bottom: calc(16px + env(safe-area-inset-bottom)); }
 }
+#jsl-toolbar.jsl-toolbar{
+  z-index: 2147483647 !important;
+  bottom: max(env(safe-area-inset-bottom, 0px) + 16px, 16px);
+}
+
+[data-element="toolsHeader"],
+[data-element^="toolbarGroup-"],
+[data-element="toolbarGroupButton"]{
+  display:none !important; /* si la lib réapparaît, on la coupe côté CSS aussi */
+}
 
