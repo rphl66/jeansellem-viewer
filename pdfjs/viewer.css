@@ -17,13 +17,13 @@
   --btn-radius: 8px;
 
   /* Espacement toolbar */
-  --toolbar-gap: 12px;
+  --toolbar-gap: 10px;
 
   /* Bouton Full screen (couleurs indépendantes) */
   --fs-bg: #000000;
   --fs-fg: #ffffff;
   --fs-hover: #222222;
-  --fs-active: #3a86ff;
+  --fs-active: #ffffff;
 
   --font-family: 'Overpass', system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
@@ -35,7 +35,7 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 
 /* Cadre / barre du haut */
 .Header {
-  background-color: var(--primary-color) !important;
+  background-color: #ffffff !important;
   border-bottom: 1px solid #ffffff !important;
 }
 #documentHeader, .DocumentContainer { background-color: var(--primary-color) !important; }
@@ -74,7 +74,7 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 .Panel, .Menu, .Popup, .Overlay, .Modal{
   background: #ffffff !important;
   border-radius: var(--btn-radius) !important;
-  border: 1px solid #ffffff !important;
+  border: 0px solid #ffffff !important;
   color: var(--text-color) !important;
   box-shadow: none !important;
 }
