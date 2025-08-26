@@ -6,22 +6,7 @@ window.addEventListener('viewerLoaded', () => {
   if (!instance || !instance.UI) return;
   const { UI, Core } = instance;
 
-  // --- Badge debug (3 s) -------------------------------
-  try {
-    const id = 'jsl-debug';
-    if (!document.getElementById(id)) {
-      const b = document.createElement('div');
-      b.id = id;
-      b.textContent = 'JSL UI v27 OK';
-      Object.assign(b.style, {
-        position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
-        background:'#222', color:'#fff', font:'12px/1.2 monospace',
-        padding:'4px 6px', borderRadius:'6px', opacity:'0.9'
-      });
-      document.body.appendChild(b);
-      setTimeout(()=> b.remove(), 3000);
-    }
-  } catch(e){}
+
 
   // --- Nettoyage total de la barre du haut --------------
   try {
