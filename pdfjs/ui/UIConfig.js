@@ -1,71 +1,92 @@
 // =========================================================
-// JEANSELLEM — UIConfig (UI + barre flottante interne) v17
+// JEANSELLEM — UIConfig (UI + barre flottante interne) v18
 // =========================================================
 window.addEventListener('viewerLoaded', () => {
   const instance = window.instance;
   if (!instance || !instance.UI) return;
-
   const { UI, Core } = instance;
 
-  // --- Badge debug (3 s)
+  // --- Badge debug 3s (pour vérifier le chargement)
   if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
     b.id = 'jsl-debug';
-    b.textContent = 'JSL UI v17 OK';
+    b.textContent = 'JSL UI v18 OK';
     Object.assign(b.style, {
-      position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
-      background:'#111', color:'#fff', font:'12px/1.2 monospace',
-      padding:'4px 6px', borderRadius:'6px', opacity:'0.85'
+      position: 'fixed', top: '8px', right: '8px', zIndex: 2147483647,
+      background: '#111', color: '#fff', font: '12px/1.2 monospace',
+      padding: '4px 6px', borderRadius: '6px', opacity: '0.85'
     });
     document.body.appendChild(b);
-    setTimeout(()=> b.remove(), 3000);
+    setTimeout(() => b.remove(), 3000);
   }
 
-  // Verrous / masquages
-  UI.setFeatureFlags({ disableLocalFilePicker:true, disablePrint:true, disableDownload:true });
-  UI.disableElements([
+  // --- Verrous et groupe de barre par défaut (pas d’Annotate)
+  UI.setFeatureFlags({
+    disableLocalFilePicker: true,
+    disablePrint: true,
+    disableDownload: true
+  });
+  UI.setToolbarGroup && UI.setToolbarGroup(UI.ToolbarGroup.View);
+
+  // --- Cacher tout ce qu’on ne veut pas
+  const HIDE_IDS = [
+    // boutons natifs
     'downloadButton','downloadFileButton','printButton',
     'themeChangeButton','languageButton',
     'selectToolButton','textSelectToolButton','panToolButton',
     'rotateClockwiseButton','rotateCounterClockwiseButton',
     'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
     'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
-    'fullscreenButton'
-  ]);
+    'fullscreenButton',
 
-  // (optionnel) bouton FS dans la barre native
-  UI.setHeaderItems(h => {
-    h.push(
-      { type:'zoomOutButton' },
-      { type:'zoomDropdown' },
-      { type:'zoomInButton' },
+    // UI d’annotation (ruban, style popup, notes…)
+    'toolbarGroupButton',      // menu "Annotate" sur certains thèmes
+    'toolsHeader','toolsOverlay',
+    'toolStylePopup','stylePopup','annotationStylePopup',
+    'notesPanelButton','toggleNotesButton','toggleNotesPanelButton','commentsPanelButton'
+  ];
+  try {
+    UI.disableElements(HIDE_IDS);
+    HIDE_IDS.forEach(id => UI.updateElement(id, { hidden: true, disabled: true }));
+    UI.closeElements && UI.closeElements(['toolsHeader']);
+  } catch (e) {}
+
+  // --- Bouton plein écran dans la barre native (après les zooms)
+  UI.setHeaderItems(header => {
+    header.push(
+      { type: 'zoomOutButton' },
+      { type: 'zoomDropdown' },
+      { type: 'zoomInButton' },
       {
-        type:'actionButton',
-        dataElement:'myFullscreenButton',
-        title:'Full screen',
-        img:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+        type: 'actionButton',
+        dataElement: 'myFullscreenButton',
+        title: 'Full screen',
+        img:
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
+          '<path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
         onClick: () => UI.enterFullscreen()
       }
     );
   });
 
-  // Mobile : couverture + page-by-page + FitWidth
+  // --- Mobile : couverture + défilement page par page + FitWidth
   const isMobile = matchMedia('(max-width: 768px)').matches;
   Core.documentViewer.addEventListener('documentLoaded', () => {
     if (!isMobile) return;
-    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(e){}
-    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch(e){}
-    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch(e){}
-    try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e){}
-    try { Core.documentViewer.setCurrentPage(1); } catch(e){}
+    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch (e) {}
+    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch (e) {}
+    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch (e) {}
+    try { UI.setFitMode(UI.FitMode.FitWidth); } catch (e) {}
+    try { Core.documentViewer.setCurrentPage(1); } catch (e) {}
   });
 
+  // Thème clair (cohérent avec viewer.css)
   UI.setTheme('light');
 
-  // ---- BARRE FLOTTANTE interne (dans l’iframe)
-  function mountToolbar(){
+  // --- BARRE FLOTTANTE interne (dans l’iframe)
+  function mountToolbar() {
     if (document.getElementById('jsl-toolbar')) return;
-
     const bar = document.createElement('div');
     bar.id = 'jsl-toolbar';
     bar.className = 'jsl-toolbar';
@@ -96,7 +117,6 @@ window.addEventListener('viewerLoaded', () => {
         </svg>
       </button>
     `;
-
     (document.getElementById('app') || document.body).appendChild(bar);
 
     const dv = Core.documentViewer;
@@ -118,5 +138,5 @@ window.addEventListener('viewerLoaded', () => {
     });
   }
   mountToolbar();
-  new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
+  new MutationObserver(mountToolbar).observe(document.body, { childList: true, subtree: true });
 });
