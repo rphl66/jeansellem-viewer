@@ -1,16 +1,16 @@
-/* =========================================================
-   JEANSELLEM — UIConfig (UI + barre flottante) v25
-   ========================================================= */
+// =========================================================
+// JEANSELLEM — UIConfig (UI + barre flottante interne) v23
+// =========================================================
 window.addEventListener('viewerLoaded', () => {
   const instance = window.instance;
   if (!instance || !instance.UI) return;
   const { UI, Core } = instance;
 
-  // Badge debug 3 s
+  // Badge debug 3 s (peut être retiré)
   if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
     b.id = 'jsl-debug';
-    b.textContent = 'JSL UI v25 OK';
+    b.textContent = 'JSL UI v23 OK';
     Object.assign(b.style, {
       position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
       background:'#111', color:'#fff', font:'12px/1.2 monospace',
@@ -20,105 +20,53 @@ window.addEventListener('viewerLoaded', () => {
     setTimeout(()=> b.remove(), 3000);
   }
 
-  // Verrous (si dispo selon version)
-  if (typeof UI.setFeatureFlags === 'function') {
-    UI.setFeatureFlags({ disableLocalFilePicker:true, disablePrint:true, disableDownload:true });
-  }
-
-  // Barre "View" (si dispo)
-  if (typeof UI.setToolbarGroup === 'function' && UI.ToolbarGroup?.View) {
-    UI.setToolbarGroup(UI.ToolbarGroup.View);
-  }
-
-  // Cacher éléments / menus
-  const HIDE_IDS = [
-    'downloadButton','downloadFileButton','printButton',
-    'themeChangeButton','languageButton',
-    'selectToolButton','textSelectToolButton','panToolButton',
-    'rotateClockwiseButton','rotateCounterClockwiseButton',
-    'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
-    'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
-    'fullscreenButton',
-    'toolbarGroupButton','toolbarGroup-Annotate','toolbarGroup-Edit','toolbarGroup-Forms',
-    'toolbarGroup-Insert','toolbarGroup-Measure','toolbarGroup-Shapes',
-    'toolsHeader','toolsOverlay','toolStylePopup','stylePopup','annotationStylePopup',
-    'notesPanelButton','toggleNotesButton','toggleNotesPanelButton','commentsPanelButton'
-  ];
-  try {
-    UI.disableElements(HIDE_IDS);
-    HIDE_IDS.forEach(id => UI.updateElement(id, { hidden:true, disabled:true }));
-    UI.closeElements && UI.closeElements(['toolsHeader','toolStylePopup','stylePopup']);
-  } catch {}
-
-  // Pas d’outil d’annotation actif
-  try { UI.setToolMode && UI.setToolMode(Core?.Tools?.ToolNames?.PAN); } catch {}
-
-  // Bouton FS dans la barre native
-  const fullscreenSVG =
-    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'+
-    '<path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'+
-    '<path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-
-  UI.setHeaderItems(header => {
-    header.push(
-      { type:'zoomOutButton' },
-      { type:'zoomDropdown' },
-      { type:'zoomInButton' },
-      { type:'actionButton', dataElement:'myFullscreenButton', title:'Full screen', img: fullscreenSVG,
-        onClick: () => enterFullscreen()
-      }
-    );
+  // Verrous
+  UI.setToolbarGroup && UI.setToolbarGroup(UI.ToolbarGroup.View);
+  UI.setFeatureFlags?.({
+    disableLocalFilePicker: true,
+    disablePrint: true,
+    disableDownload: true
   });
 
-  // ===== Helpers robustes =====
-  const dv = Core.documentViewer;
-  const Z_MIN = 0.25, Z_MAX = 8, Z_STEP = 1.1;
+  // ► Cacher boutons "inutiles" en haut + le pager “6/19”
+  const HIDE_TOP = [
+    // haut-droite
+    'searchButton',
+    'toggleNotesButton','notesPanelButton',
+    'settingsButton','menuButton','ribbonsDropdownButton',
+    // notre ancien FS d’en-tête (on garde celui de la barre flottante)
+    'myFullscreenButton',
+    // petit overlay de pagination “6/19”
+    'pageNavOverlay','pageNavigationOverlay'
+  ];
+  try {
+    UI.disableElements(HIDE_TOP);
+    HIDE_TOP.forEach(id => UI.updateElement?.(id, { hidden:true, disabled:true }));
+    // ferme d’éventuels popups
+    UI.closeElements?.(['pageNavOverlay','pageNavigationOverlay']);
+  } catch(e){}
 
-  const getZoom = () =>
-    (UI.getZoomLevel?.() ?? dv.getZoomLevel?.() ?? 1);
-
-  const setZoomAbs = (z) => {
-    const val = Math.max(Z_MIN, Math.min(Z_MAX, z));
-    try {
-      if (UI.setZoomLevel) return UI.setZoomLevel(val);
-      if (dv.setZoomLevel)  return dv.setZoomLevel(val);
-      if (dv.zoomTo)        return dv.zoomTo(val);
-    } catch {}
-  };
-
-  function zoomIn() {
-    try { if (UI.zoomIn) return UI.zoomIn(); } catch {}
-    setZoomAbs(getZoom() * Z_STEP);
-  }
-  function zoomOut() {
-    try { if (UI.zoomOut) return UI.zoomOut(); } catch {}
-    setZoomAbs(getZoom() / Z_STEP);
-  }
-
-  function enterFullscreen() {
-    try { if (UI.enterFullscreen) return UI.enterFullscreen(); } catch {}
-    const el = document.documentElement;
-    const req = el.requestFullscreen || el.webkitRequestFullscreen ||
-                el.mozRequestFullScreen || el.msRequestFullscreen;
-    if (req) req.call(el);
-  }
+  // Réordonner les contrôles zoom du header (on les garde)
+  UI.setHeaderItems(header => {
+    // on force juste l’ordre zoom-, %, zoom+ ; rien d’autre n’est ajouté
+    header.push({ type:'zoomOutButton' },{ type:'zoomDropdown' },{ type:'zoomInButton' });
+  });
 
   // Mobile : couverture + page-by-page + FitWidth
   const isMobile = matchMedia('(max-width: 768px)').matches;
   Core.documentViewer.addEventListener('documentLoaded', () => {
-    if (isMobile) {
-      try { UI.setLayoutMode(UI.LayoutMode.Single); } catch {}
-      try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch {}
-      try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch {}
-      try { UI.setFitMode(UI.FitMode.FitWidth); } catch {}
-      try { Core.documentViewer.setCurrentPage(1); } catch {}
-    }
+    if (!isMobile) return;
+    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(e){}
+    try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(e){}
+    try { UI.setPageTransitionMode?.(UI.PageTransitionMode.PAGE); } catch(e){}
+    try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e){}
+    try { Core.documentViewer.setCurrentPage(1); } catch(e){}
   });
 
   UI.setTheme('light');
 
-  // ===== Barre flottante =====
-  function buildToolbar() {
+  // ===== Barre flottante (bas-centre) =====
+  function mountToolbar(){
     if (document.getElementById('jsl-toolbar')) return;
 
     const bar = document.createElement('div');
@@ -137,29 +85,24 @@ window.addEventListener('viewerLoaded', () => {
     `;
     (document.getElementById('app') || document.body).appendChild(bar);
 
+    const dv = Core.documentViewer;
     bar.addEventListener('click', e => {
       const btn = e.target.closest('.jsl-btn'); if (!btn) return;
       const act = btn.dataset.act;
-      const page = dv.getCurrentPage ? dv.getCurrentPage() : 1;
-      const max  = dv.getPageCount ? dv.getPageCount() : 1;
+      const page = dv.getCurrentPage?.() || 1;
+      const max  = dv.getPageCount?.() || 1;
 
       switch (act) {
-        case 'zin':  zoomIn(); break;
-        case 'zout': zoomOut(); break;
-        case 'first': dv.setCurrentPage && dv.setCurrentPage(1); break;
-        case 'prev':  dv.setCurrentPage && dv.setCurrentPage(Math.max(1, page - 1)); break;
-        case 'next':  dv.setCurrentPage && dv.setCurrentPage(Math.min(max, page + 1)); break;
-        case 'last':  dv.setCurrentPage && dv.setCurrentPage(max); break;
-        case 'fs':    enterFullscreen(); break;
+        case 'zin':  UI.zoomIn?.(); break;
+        case 'zout': UI.zoomOut?.(); break;
+        case 'first': dv.setCurrentPage?.(1); break;
+        case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
+        case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
+        case 'last':  dv.setCurrentPage?.(max); break;
+        case 'fs':    UI.enterFullscreen?.(); break;
       }
     });
   }
-
-  const mount = () => buildToolbar();
-  if (Core.documentViewer.getDocument()) mount();
-  else Core.documentViewer.addEventListener('documentLoaded', mount, { once:true });
-
-  new MutationObserver(mount).observe(document.body, { childList:true, subtree:true });
-  Core.documentViewer.addEventListener('pagesUpdated', mount);
-  Core.documentViewer.addEventListener('layoutChanged', mount);
+  mountToolbar();
+  new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
 });
