@@ -12,12 +12,12 @@ window.addEventListener('viewerLoaded', () => {
     b.id = 'jsl-debug';
     b.textContent = 'JSL UI v19 OK';
     Object.assign(b.style, {
-      position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
-      background:'#111', color:'#fff', font:'12px/1.2 monospace',
-      padding:'4px 6px', borderRadius:'6px', opacity:'0.85'
+      position: 'fixed', top: '8px', right: '8px', zIndex: 2147483647,
+      background: '#111', color: '#fff', font: '12px/1.2 monospace',
+      padding: '4px 6px', borderRadius: '6px', opacity: '0.85'
     });
     document.body.appendChild(b);
-    setTimeout(()=> b.remove(), 3000);
+    setTimeout(() => b.remove(), 3000);
   }
 
   // --- Verrous
@@ -40,7 +40,7 @@ window.addEventListener('viewerLoaded', () => {
     'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
     'fullscreenButton',
 
-    // Groupes/éléments Annotate & co
+    // Groupes/éléments d’annotation
     'toolbarGroupButton',
     'toolbarGroup-Annotate','toolbarGroup-Edit','toolbarGroup-Forms',
     'toolbarGroup-Insert','toolbarGroup-Measure','toolbarGroup-Shapes',
@@ -50,24 +50,27 @@ window.addEventListener('viewerLoaded', () => {
   ];
   try {
     UI.disableElements(HIDE_IDS);
-    HIDE_IDS.forEach(id => UI.updateElement(id, { hidden:true, disabled:true }));
+    HIDE_IDS.forEach(id => UI.updateElement(id, { hidden: true, disabled: true }));
     UI.closeElements && UI.closeElements(['toolsHeader','toolStylePopup','stylePopup']);
-  } catch(e){}
+  } catch (e) {}
 
-  // 3) S’assurer qu’aucun outil d’annotation n’est actif
-  try { UI.setToolMode && UI.setToolMode(Core.Tools.ToolNames.PAN); } catch(e){}
+  // 3) Aucune tool d’annotation active
+  try { UI.setToolMode && UI.setToolMode(Core.Tools.ToolNames.PAN); } catch (e) {}
 
   // 4) Bouton plein écran dans la barre native (après zooms)
   UI.setHeaderItems(header => {
     header.push(
-      { type:'zoomOutButton' },
-      { type:'zoomDropdown' },
-      { type:'zoomInButton' },
+      { type: 'zoomOutButton' },
+      { type: 'zoomDropdown' },
+      { type: 'zoomInButton' },
       {
-        type:'actionButton',
-        dataElement:'myFullscreenButton',
-        title:'Full screen',
-        img:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+        type: 'actionButton',
+        dataElement: 'myFullscreenButton',
+        title: 'Full screen',
+        img:
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
+          '<path d="M9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
         onClick: () => UI.enterFullscreen()
       }
     );
@@ -77,11 +80,11 @@ window.addEventListener('viewerLoaded', () => {
   const isMobile = matchMedia('(max-width: 768px)').matches;
   Core.documentViewer.addEventListener('documentLoaded', () => {
     if (!isMobile) return;
-    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch(e){}
-    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch(e){}
-    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch(e){}
-    try { UI.setFitMode(UI.FitMode.FitWidth); } catch(e){}
-    try { Core.documentViewer.setCurrentPage(1); } catch(e){}
+    try { UI.setLayoutMode(UI.LayoutMode.Single); } catch (e) {}
+    try { UI.setScrollMode && UI.setScrollMode(UI.ScrollMode.PAGE); } catch (e) {}
+    try { UI.setPageTransitionMode && UI.setPageTransitionMode(UI.PageTransitionMode.PAGE); } catch (e) {}
+    try { UI.setFitMode(UI.FitMode.FitWidth); } catch (e) {}
+    try { Core.documentViewer.setCurrentPage(1); } catch (e) {}
   });
 
   UI.setTheme('light');
@@ -144,6 +147,5 @@ window.addEventListener('viewerLoaded', () => {
   // Monter maintenant + re-monter après recompositions
   mountToolbar();
   setTimeout(mountToolbar, 400);
-  new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
-
+  new MutationObserver(mountToolbar).observe(document.body, { childList: true, subtree: true });
 });
