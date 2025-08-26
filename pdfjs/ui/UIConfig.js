@@ -1,5 +1,5 @@
 /* =========================================================
-   JEANSELLEM — UIConfig (UI + barre flottante) v24
+   JEANSELLEM — UIConfig (UI + barre flottante) v25
    ========================================================= */
 window.addEventListener('viewerLoaded', () => {
   const instance = window.instance;
@@ -10,7 +10,7 @@ window.addEventListener('viewerLoaded', () => {
   if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
     b.id = 'jsl-debug';
-    b.textContent = 'JSL UI v24 OK';
+    b.textContent = 'JSL UI v25 OK';
     Object.assign(b.style, {
       position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
       background:'#111', color:'#fff', font:'12px/1.2 monospace',
@@ -20,17 +20,17 @@ window.addEventListener('viewerLoaded', () => {
     setTimeout(()=> b.remove(), 3000);
   }
 
-  // Verrous (optionnels selon la version)
+  // Verrous (si dispo selon version)
   if (typeof UI.setFeatureFlags === 'function') {
-    UI.setFeatureFlags({ disableLocalFilePicker: true, disablePrint: true, disableDownload: true });
+    UI.setFeatureFlags({ disableLocalFilePicker:true, disablePrint:true, disableDownload:true });
   }
 
-  // Forcer la barre "View" si dispo
+  // Barre "View" (si dispo)
   if (typeof UI.setToolbarGroup === 'function' && UI.ToolbarGroup?.View) {
     UI.setToolbarGroup(UI.ToolbarGroup.View);
   }
 
-  // Cacher éléments/menus
+  // Cacher éléments / menus
   const HIDE_IDS = [
     'downloadButton','downloadFileButton','printButton',
     'themeChangeButton','languageButton',
@@ -39,7 +39,6 @@ window.addEventListener('viewerLoaded', () => {
     'pageManipulationOverlayRotateClockwise','pageManipulationOverlayRotateCounterClockwise',
     'pageByPageButton','doublePageButton','coverFacingButton','pageOrientationButton',
     'fullscreenButton',
-    // Groupes annotation
     'toolbarGroupButton','toolbarGroup-Annotate','toolbarGroup-Edit','toolbarGroup-Forms',
     'toolbarGroup-Insert','toolbarGroup-Measure','toolbarGroup-Shapes',
     'toolsHeader','toolsOverlay','toolStylePopup','stylePopup','annotationStylePopup',
@@ -71,18 +70,31 @@ window.addEventListener('viewerLoaded', () => {
     );
   });
 
-  // Helpers zoom & fullscreen robustes
+  // ===== Helpers robustes =====
   const dv = Core.documentViewer;
+  const Z_MIN = 0.25, Z_MAX = 8, Z_STEP = 1.1;
+
   const getZoom = () =>
-    (typeof dv.getZoomLevel === 'function' && dv.getZoomLevel()) || 1;
-  const setZoom = (z) => {
+    (UI.getZoomLevel?.() ?? dv.getZoomLevel?.() ?? 1);
+
+  const setZoomAbs = (z) => {
+    const val = Math.max(Z_MIN, Math.min(Z_MAX, z));
     try {
-      if (typeof dv.setZoomLevel === 'function') dv.setZoomLevel(z);
-      else if (typeof dv.zoomTo === 'function') dv.zoomTo(z);
-      else if (typeof UI.setZoomLevel === 'function') UI.setZoomLevel(z);
-      else if (typeof UI.zoomTo === 'function') UI.zoomTo(z);
+      if (UI.setZoomLevel) return UI.setZoomLevel(val);
+      if (dv.setZoomLevel)  return dv.setZoomLevel(val);
+      if (dv.zoomTo)        return dv.zoomTo(val);
     } catch {}
   };
+
+  function zoomIn() {
+    try { if (UI.zoomIn) return UI.zoomIn(); } catch {}
+    setZoomAbs(getZoom() * Z_STEP);
+  }
+  function zoomOut() {
+    try { if (UI.zoomOut) return UI.zoomOut(); } catch {}
+    setZoomAbs(getZoom() / Z_STEP);
+  }
+
   function enterFullscreen() {
     try { if (UI.enterFullscreen) return UI.enterFullscreen(); } catch {}
     const el = document.documentElement;
@@ -105,7 +117,7 @@ window.addEventListener('viewerLoaded', () => {
 
   UI.setTheme('light');
 
-  // ===== Barre flottante (montée après chargement du document) =====
+  // ===== Barre flottante =====
   function buildToolbar() {
     if (document.getElementById('jsl-toolbar')) return;
 
@@ -125,7 +137,6 @@ window.addEventListener('viewerLoaded', () => {
     `;
     (document.getElementById('app') || document.body).appendChild(bar);
 
-    // Actions
     bar.addEventListener('click', e => {
       const btn = e.target.closest('.jsl-btn'); if (!btn) return;
       const act = btn.dataset.act;
@@ -133,8 +144,8 @@ window.addEventListener('viewerLoaded', () => {
       const max  = dv.getPageCount ? dv.getPageCount() : 1;
 
       switch (act) {
-        case 'zin':  setZoom(Math.min(8,  getZoom() * 1.1)); break;
-        case 'zout': setZoom(Math.max(0.25, getZoom() / 1.1)); break;
+        case 'zin':  zoomIn(); break;
+        case 'zout': zoomOut(); break;
         case 'first': dv.setCurrentPage && dv.setCurrentPage(1); break;
         case 'prev':  dv.setCurrentPage && dv.setCurrentPage(Math.max(1, page - 1)); break;
         case 'next':  dv.setCurrentPage && dv.setCurrentPage(Math.min(max, page + 1)); break;
@@ -144,7 +155,6 @@ window.addEventListener('viewerLoaded', () => {
     });
   }
 
-  // Monter la barre quand le doc est prêt (et réessayer si l’UI se recompose)
   const mount = () => buildToolbar();
   if (Core.documentViewer.getDocument()) mount();
   else Core.documentViewer.addEventListener('documentLoaded', mount, { once:true });
