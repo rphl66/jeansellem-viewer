@@ -118,3 +118,77 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   background: transparent !important;
   box-shadow: none !important;
 }
+/* ===== Barre flottante (overlay interne au viewer) ===== */
+:root{
+  --tlb-bg: rgba(255,255,255,0.95);   /* Fond de la barre */
+  --tlb-fg: #000;                     /* Couleur des icônes */
+  --tlb-sep: rgba(0,0,0,0.15);        /* Séparateur vertical */
+  --tlb-shadow: 0 6px 16px rgba(0,0,0,.15);
+  --tlb-radius: 10px;
+  --tlb-btn-size: 36px;
+  --tlb-gap: 10px;
+
+  /* Couleur bouton plein écran uniquement */
+  --tlb-fs-bg: #000;
+  --tlb-fs-fg: #fff;
+  --tlb-fs-hover: #222;
+}
+
+/* Conteneur */
+#jsl-toolbar.jsl-toolbar{
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tlb-gap);
+  padding: 8px 12px;
+  background: var(--tlb-bg);
+  color: var(--tlb-fg);
+  border-radius: var(--tlb-radius);
+  box-shadow: var(--tlb-shadow);
+  border: 1px solid rgba(0,0,0,.08);
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Boutons */
+#jsl-toolbar .jsl-btn{
+  width: var(--tlb-btn-size);
+  height: var(--tlb-btn-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--tlb-fg);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#jsl-toolbar .jsl-btn:hover{ background: rgba(0,0,0,.06); }
+
+/* Séparateur */
+#jsl-toolbar .jsl-sep{
+  display: inline-block;
+  width: 1px;
+  height: 24px;
+  background: var(--tlb-sep);
+  margin: 0 4px;
+}
+
+/* Bouton plein écran — style distinct */
+#jsl-toolbar .jsl-btn-fs{
+  background: var(--tlb-fs-bg);
+  color: var(--tlb-fs-fg);
+  border-radius: 8px;
+  padding: 0 8px;
+}
+#jsl-toolbar .jsl-btn-fs:hover{ background: var(--tlb-fs-hover); }
+
+/* Mobile */
+@media (max-width: 768px){
+  #jsl-toolbar.jsl-toolbar{ bottom: 16px; --tlb-btn-size: 34px; }
+}
+
