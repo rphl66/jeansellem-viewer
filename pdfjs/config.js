@@ -109,3 +109,74 @@ instance.UI.addEventListener(instance.UI.Events.VIEWER_LOADED, () => {
   // Skin clair (ta CSS)
   UI.setTheme('light');
 });
+// … ton code EXISTANT dans VIEWER_LOADED …
+
+// --- Barre flottante interne (zoom -, zoom +, 1ère, préc., suiv., dernière, plein écran)
+const { UI, Core } = instance;
+
+function mountInternalToolbar() {
+  const root = UI.getRootElement();
+  if (root.querySelector('#jsl-toolbar')) return;
+
+  const bar = document.createElement('div');
+  bar.id = 'jsl-toolbar';
+  bar.className = 'jsl-toolbar';
+  bar.innerHTML = `
+    <button class="jsl-btn" data-act="zout" title="Zoom out" aria-label="Zoom out">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="jsl-btn" data-act="zin" title="Zoom in" aria-label="Zoom in">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+
+    <span class="jsl-sep"></span>
+
+    <button class="jsl-btn" data-act="first" title="Première page" aria-label="Première page">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6v12M10 6l8 6-8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <button class="jsl-btn" data-act="prev" title="Page précédente" aria-label="Page précédente">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <button class="jsl-btn" data-act="next" title="Page suivante" aria-label="Page suivante">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <button class="jsl-btn" data-act="last" title="Dernière page" aria-label="Dernière page">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M18 6v12M14 6l-8 6 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+    </button>
+
+    <span class="jsl-sep"></span>
+
+    <button class="jsl-btn jsl-btn-fs" data-act="fs" title="Plein écran" aria-label="Plein écran">
+      <svg viewBox="0 0 24 24" width="18" height="18">
+        <path d="M8 5H5v3M16 5h3v3M8 19H5v-3M16 19h3v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  `;
+
+  // actions
+  const dv = Core.documentViewer;
+  bar.addEventListener('click', e => {
+    const btn = e.target.closest('.jsl-btn');
+    if (!btn) return;
+    const act = btn.dataset.act;
+    const page = dv.getCurrentPage ? dv.getCurrentPage() : 1;
+    const max  = dv.getPageCount ? dv.getPageCount() : 1;
+
+    switch (act) {
+      case 'zin':  UI.zoomIn && UI.zoomIn(); break;
+      case 'zout': UI.zoomOut && UI.zoomOut(); break;
+      case 'first': dv.setCurrentPage && dv.setCurrentPage(1); break;
+      case 'prev':  dv.setCurrentPage && dv.setCurrentPage(Math.max(1, page - 1)); break;
+      case 'next':  dv.setCurrentPage && dv.setCurrentPage(Math.min(max, page + 1)); break;
+      case 'last':  dv.setCurrentPage && dv.setCurrentPage(max); break;
+      case 'fs':    UI.enterFullscreen && UI.enterFullscreen(); break;
+    }
+  });
+
+  root.appendChild(bar);
+}
+
+// monter maintenant + remonter si l’UI se recompose
+mountInternalToolbar();
+new MutationObserver(mountInternalToolbar)
+  .observe(UI.getRootElement(), { childList: true, subtree: true });
