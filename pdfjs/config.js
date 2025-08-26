@@ -1,80 +1,40 @@
 // =========================================================
-// JEANSELLEM — UIConfig (UI + barre flottante) v24
+// JEANSELLEM — UIConfig (v26)
+// Barre du haut VIDÉE + barre flottante interne (toujours visible)
 // =========================================================
 window.addEventListener('viewerLoaded', () => {
   const inst = window.instance;
-  if (!inst || !inst.UI || !inst.Core) return;
+  if (!inst || !inst.UI) return;
   const { UI, Core } = inst;
 
-  // Badge debug 3s
+  // --- petit badge debug 3s
   if (!document.getElementById('jsl-debug')) {
     const b = document.createElement('div');
     b.id = 'jsl-debug';
-    b.textContent = 'JSL UI v24 OK';
+    b.textContent = 'JSL UI v26 OK';
     Object.assign(b.style, {
       position:'fixed', top:'8px', right:'8px', zIndex:2147483647,
       background:'#111', color:'#fff', font:'12px/1.2 monospace',
       padding:'4px 6px', borderRadius:'6px', opacity:'0.85'
     });
-    document.body.appendChild(b); setTimeout(()=>b.remove(),3000);
+    document.body.appendChild(b); setTimeout(()=>b.remove(), 3000);
   }
 
-  // Toujours en mode "View"
-  UI.setToolbarGroup && UI.setToolbarGroup(UI.ToolbarGroup.View);
+  // --- verrouillages classiques
+  UI.setToolbarGroup?.(UI.ToolbarGroup.View);
+  UI.setFeatureFlags?.({ disableLocalFilePicker:true, disablePrint:true, disableDownload:true });
 
-  // Verrous
-  UI.setFeatureFlags?.({
-    disableLocalFilePicker: true,
-    disablePrint: true,
-    disableDownload: true,
+  // --- vider complètement la barre du haut
+  UI.setHeaderItems(() => {});             // <— rien dans le header
+  UI.disableElements?.(['toolsHeader','toolsOverlay']); // coupe toute barre d’annotation résiduelle
+
+  // --- cacher le mini pager “x/xx”
+  ['pageNavOverlay','pageNavigationOverlay'].forEach(id=>{
+    try { UI.updateElement?.(id, { hidden:true, disabled:true }); } catch(_){}
   });
+  UI.closeElements?.(['pageNavOverlay','pageNavigationOverlay']);
 
-  // Eléments à masquer (haut droite + pager + annotate)
-  const HIDE = [
-    // haut-droite
-    'searchButton','toggleNotesButton','toggleNotesPanelButton',
-    'notesPanelButton','settingsButton','menuButton','ribbonsDropdownButton',
-    // annotate / styles
-    'toolsHeader','toolsOverlay','toolbarGroupButton',
-    'toolbarGroup-Annotate','toolbarGroup-Edit','toolbarGroup-Forms',
-    'toolbarGroup-Insert','toolbarGroup-Measure','toolbarGroup-Shapes',
-    // pager “x/xx”
-    'pageNavOverlay','pageNavigationOverlay',
-    // ancien FS natif si présent
-    'fullscreenButton'
-  ];
-  const applyHides = () => {
-    try {
-      UI.disableElements(HIDE);
-      HIDE.forEach(id => UI.updateElement?.(id, { hidden:true, disabled:true }));
-      UI.closeElements?.(['pageNavOverlay','pageNavigationOverlay','toolsHeader','toolsOverlay']);
-    } catch {}
-  };
-  applyHides();
-
-  // Réordonner le header : zoom -, %, zoom +
-  UI.setHeaderItems(header => {
-    header.splice(0, header.length); // on vide pour éviter les restes
-    header.push({ type:'zoomOutButton' },{ type:'zoomDropdown' },{ type:'zoomInButton' });
-  });
-
-  // Thème
-  UI.setTheme('light');
-
-  // Mobile : couverture + défilement page à page + FitWidth
-  const isMobile = matchMedia('(max-width: 768px)').matches;
-  Core.documentViewer.addEventListener('documentLoaded', () => {
-    applyHides();
-    if (isMobile) {
-      try { UI.setLayoutMode(UI.LayoutMode.Single); } catch{}
-      try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch{}
-      try { UI.setPageTransitionMode?.(UI.PageTransitionMode.PAGE); } catch{}
-      try { UI.setFitMode(UI.FitMode.FitWidth); } catch{}
-      try { Core.documentViewer.setCurrentPage(1); } catch{}
-    }
-  });
-
-  // ===== Barre flottante (bas-centre) =====
+  // --- barre flottante
   function mountToolbar(){
     if (document.getElementById('jsl-toolbar')) return;
 
@@ -99,8 +59,7 @@ window.addEventListener('viewerLoaded', () => {
       const btn = e.target.closest('.jsl-btn'); if (!btn) return;
       const act = btn.dataset.act;
       const page = dv.getCurrentPage?.() || 1;
-      const max  = dv.getPageCount?.() || 1;
-
+      const max  = dv.getPageCount?.()  || 1;
       switch (act) {
         case 'zin':  UI.zoomIn?.(); break;
         case 'zout': UI.zoomOut?.(); break;
@@ -111,11 +70,13 @@ window.addEventListener('viewerLoaded', () => {
         case 'fs':    UI.enterFullscreen?.(); break;
       }
     });
-  }
-  mountToolbar();
 
-  // Re-appliquer si l’UI se recompose
-  const root = UI.getRootElement?.();
-  if (root) new MutationObserver(() => { applyHides(); mountToolbar(); })
-    .observe(root, { childList:true, subtree:true });
+    // log pour vérifier dans la console de l’iframe
+    console.log('✅ jsl-toolbar monté');
+  }
+
+  // Monter la barre après chargement + sur recompositions
+  requestAnimationFrame(mountToolbar);
+  Core.documentViewer.addEventListener('documentLoaded', () => setTimeout(mountToolbar, 0));
+  new MutationObserver(mountToolbar).observe(document.body, { childList:true, subtree:true });
 });
