@@ -111,12 +111,12 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   border: 1px solid rgba(0,0,0,.06) !important;
 }
 
-[data-element="pageNavOverlay"] .Button,
-[data-element="pageNavigationOverlay"] .Button,
-.PageNavOverlay .Button,
-.pageNavOverlay .Button {
-  background: transparent !important;
-  box-shadow: none !important;
+/* Supprimer le petit overlay “6/19” */
+[data-element="pageNavOverlay"],
+[data-element="pageNavigationOverlay"],
+.PageNavOverlay,
+.pageNavOverlay {
+  display: none !important;
 }
 /* ===== Barre flottante (overlay interne au viewer) ===== */
 :root{
