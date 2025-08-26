@@ -186,6 +186,8 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   padding: 0 8px;
 }
 #jsl-toolbar .jsl-btn-fs:hover{ background: var(--tlb-fs-hover); }
+#jsl-toolbar.jsl-toolbar{ z-index: 2147483647 !important; }
+
 
 /* Mobile */
 @media (max-width: 768px){
