@@ -1,13 +1,13 @@
 /* =========================================================
-   JEANSELLEM — PDF Viewer (skin clair + espacement + FS dédié)
+   JEANSELLEM — PDF Viewer (skin clair + barre flottante)
    ========================================================= */
 
 /* Police */
 @import url('https://fonts.googleapis.com/css2?family=Overpass:wght@400;600&display=swap');
 
-/* Variables */
+/* ---------- Thème / variables ---------- */
 :root{
-  --primary-color: #ffffff;    /* fond/barre/cadre */
+  --primary-color: #ffffff;
   --text-color: #111111;
 
   /* Boutons génériques */
@@ -16,31 +16,41 @@
   --btn-bg-active: #ffffff;
   --btn-radius: 8px;
 
-  /* Espacement toolbar */
   --toolbar-gap: 10px;
 
-  /* Bouton Full screen (couleurs indépendantes) */
+  /* Bouton plein écran (header) */
   --fs-bg: #000000;
   --fs-fg: #ffffff;
   --fs-hover: #222222;
   --fs-active: #ffffff;
 
   --font-family: 'Overpass', system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+
+  /* Barre flottante */
+  --tlb-bg: rgba(255,255,255,0.95);
+  --tlb-fg: #000;
+  --tlb-sep: rgba(0,0,0,0.15);
+  --tlb-shadow: 0 6px 16px rgba(0,0,0,.15);
+  --tlb-radius: 10px;
+  --tlb-btn-size: 36px;
+
+  --tlb-fs-bg: #000;
+  --tlb-fs-fg: #fff;
+  --tlb-fs-hover: #222;
 }
 
-/* Typo globale UI */
+/* ---------- Typo / structure UI ---------- */
 body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   font-family: var(--font-family) !important;
 }
 
-/* Cadre / barre du haut */
 .Header {
   background-color: #ffffff !important;
   border-bottom: 1px solid #ffffff !important;
 }
 #documentHeader, .DocumentContainer { background-color: var(--primary-color) !important; }
 
-/* ESPACEMENT DES BOUTONS */
+/* Espacement header */
 .Header .Button,
 .Header [data-element="zoomDropdown"] {
   margin: 0 calc(var(--toolbar-gap) / 2) !important;
@@ -56,7 +66,7 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 .Button:hover { background: var(--btn-bg-hover) !important; }
 .Button.active, .Button:active { background: var(--btn-bg-active) !important; color:#fff !important; }
 
-/* Bouton Full screen — style distinct */
+/* Bouton plein écran (header) */
 .Button[data-element="myFullscreenButton"]{
   background: var(--fs-bg) !important;
   color: var(--fs-fg) !important;
@@ -74,44 +84,26 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 .Panel, .Menu, .Popup, .Overlay, .Modal{
   background: #ffffff !important;
   border-radius: var(--btn-radius) !important;
-  border: 0px solid #ffffff !important;
+  border: 0 !important;
   color: var(--text-color) !important;
   box-shadow: none !important;
 }
 
-/* Sécurité : cacher options indésirables partout */
-[data-element="downloadButton"],
-[data-element="downloadFileButton"],
-[data-element="printButton"],
-[data-element="themeChangeButton"],
-[data-element="languageButton"],
-[data-element="selectToolButton"],
-[data-element="textSelectToolButton"],
-[data-element="panToolButton"],
-[data-element="rotateClockwiseButton"],
-[data-element="rotateCounterClockwiseButton"],
-[data-element="pageManipulationOverlayRotateClockwise"],
-[data-element="pageManipulationOverlayRotateCounterClockwise"],
-[data-element="pageByPageButton"],
-[data-element="doublePageButton"],
-[data-element="coverFacingButton"],
-[data-element="pageOrientationButton"]{
+/* ---------- Caches “filet de sécurité” côté CSS ---------- */
+/* Si des barres d’annotation réapparaissent, on les coupe */
+[data-element="toolsHeader"],
+[data-element="toolsOverlay"],
+.toolsHeader,
+.toolsOverlay {
+  display: none !important;
+}
+/* Cacher le sélecteur de groupes (“Annotate” etc.) s’il revenait */
+[data-element^="toolbarGroup-"],
+[data-element="toolbarGroupButton"]{
   display:none !important;
 }
-/* ========= Page navigation (flottant bas) — couleur dédiée ========= */
-:root { --pager-bg: #eaeef9; } /* ← change cette couleur librement */
 
-[data-element="pageNavOverlay"],
-[data-element="pageNavigationOverlay"],
-.PageNavOverlay,
-.pageNavOverlay {
-  background: var(--pager-bg) !important;
-  border-radius: 18px !important;
-  box-shadow: 0 4px 16px rgba(0,0,0,.08) !important;
-  border: 1px solid rgba(0,0,0,.06) !important;
-}
-
-/* Supprimer complètement le petit overlay “x/xx” */
+/* Supprimer complètement le petit overlay “x/xx” (pager) */
 [data-element="pageNavOverlay"],
 [data-element="pageNavigationOverlay"],
 .PageNavOverlay,
@@ -119,23 +111,7 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   display: none !important;
 }
 
-/* ===== Barre flottante (overlay interne au viewer) ===== */
-:root{
-  --tlb-bg: rgba(255,255,255,0.95);   /* Fond de la barre */
-  --tlb-fg: #000;                     /* Couleur des icônes */
-  --tlb-sep: rgba(0,0,0,0.15);        /* Séparateur vertical */
-  --tlb-shadow: 0 6px 16px rgba(0,0,0,.15);
-  --tlb-radius: 10px;
-  --tlb-btn-size: 36px;
-  --tlb-gap: 10px;
-
-  /* Couleur bouton plein écran uniquement */
-  --tlb-fs-bg: #000;
-  --tlb-fs-fg: #fff;
-  --tlb-fs-hover: #222;
-}
-
-/* Conteneur */
+/* ---------- Barre flottante (interne au viewer) ---------- */
 #jsl-toolbar.jsl-toolbar{
   position: fixed;
   left: 50%;
@@ -143,19 +119,18 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  gap: var(--tlb-gap);
+  gap: 10px;
   padding: 8px 12px;
   background: var(--tlb-bg);
   color: var(--tlb-fg);
   border-radius: var(--tlb-radius);
   box-shadow: var(--tlb-shadow);
   border: 1px solid rgba(0,0,0,.08);
-  z-index: 9999;
+  z-index: 2147483647 !important;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
 
-/* Boutons */
 #jsl-toolbar .jsl-btn{
   width: var(--tlb-btn-size);
   height: var(--tlb-btn-size);
@@ -170,7 +145,6 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 }
 #jsl-toolbar .jsl-btn:hover{ background: rgba(0,0,0,.06); }
 
-/* Séparateur */
 #jsl-toolbar .jsl-sep{
   display: inline-block;
   width: 1px;
@@ -179,7 +153,7 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   margin: 0 4px;
 }
 
-/* Bouton plein écran — style distinct */
+/* Bouton plein écran (barre flottante) */
 #jsl-toolbar .jsl-btn-fs{
   background: var(--tlb-fs-bg);
   color: var(--tlb-fs-fg);
@@ -187,58 +161,11 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   padding: 0 8px;
 }
 #jsl-toolbar .jsl-btn-fs:hover{ background: var(--tlb-fs-hover); }
-#jsl-toolbar.jsl-toolbar{ z-index: 2147483647 !important; }
 
-
-/* Mobile */
+/* Mobile + safe area iOS */
 @media (max-width: 768px){
   #jsl-toolbar.jsl-toolbar{ bottom: 16px; --tlb-btn-size: 34px; }
 }
-/* Filet de sécurité : si la UI rouvre la barre d’annotation, on la masque */
-[data-element="toolsHeader"],
-[data-element="toolsOverlay"],
-.toolsHeader,
-.toolsOverlay {
-  display: none !important;
-}
-
-/* Évite que la barre flottante chevauche le pager (on le décale un peu) */
-[data-element="pageNavOverlay"],
-[data-element="pageNavigationOverlay"],
-.PageNavOverlay,
-.pageNavOverlay {
-  margin-bottom: 56px !important; /* espace pour #jsl-toolbar */
-}
-
-/* iOS : respect du safe-area en bas (barre maison) */
-@supports (padding: max(0px)) {
-  #jsl-toolbar.jsl-toolbar {
-    bottom: calc(16px + env(safe-area-inset-bottom));
-  }
-}
-/* Cacher le sélecteur "Annotate" quoi qu'il arrive */
-[data-element="toolbarGroupButton"] { display:none !important; }
-
-/* Filet de sécurité si une barre d'annotation réapparaît */
-[data-element="toolsHeader"], [data-element="toolsOverlay"],
-.toolsHeader, .toolsOverlay { display:none !important; }
-
-/* Décaler un peu le pager pour ne pas recouvrir la barre */
-[data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
-.PageNavOverlay, .pageNavOverlay { margin-bottom:56px !important; }
-
-/* iOS safe area pour la barre flottante */
 @supports (padding: max(0px)) {
   #jsl-toolbar.jsl-toolbar { bottom: calc(16px + env(safe-area-inset-bottom)); }
 }
-#jsl-toolbar.jsl-toolbar{
-  z-index: 2147483647 !important;
-  bottom: max(env(safe-area-inset-bottom, 0px) + 16px, 16px);
-}
-
-[data-element="toolsHeader"],
-[data-element^="toolbarGroup-"],
-[data-element="toolbarGroupButton"]{
-  display:none !important; /* si la lib réapparaît, on la coupe côté CSS aussi */
-}
-
