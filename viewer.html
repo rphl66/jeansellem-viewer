@@ -8,123 +8,115 @@
     html,body { height:100%; margin:0 }
     #viewer   { height:100vh }
   </style>
-  <!-- ton skin (à la racine du repo) -->
-  <link rel="stylesheet" href="./pdfjs/viewer.css?v=26">
+  <!-- Skin du viewer (dans /pdfjs) -->
+  <link rel="stylesheet" href="./pdfjs/viewer.css?v=27">
 </head>
 <body>
   <div id="viewer"></div>
 
-  <!-- Lib WebViewer (selon ta capture, le fichier est à la racine) -->
- <script src="pdfjs/webviewer.min.js"></script>
-<script>
-(function(){
-  const params = new URLSearchParams(location.search);
-  const file = params.get('file') || 'sample.pdf';
+  <!-- Lib WebViewer -->
+  <script src="./pdfjs/webviewer.min.js"></script>
+  <script>
+  (function(){
+    const params = new URLSearchParams(location.search);
+    const file = params.get('file') || 'sample.pdf';
 
-  WebViewer({
-    path: 'pdfjs',
-    licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-    initialDoc: file,
-    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=26' // bump si tu modifies viewer.css
-  }, document.getElementById('viewer')).then(instance => {
-    const { UI, Core } = instance;
-    const dv = Core.documentViewer;
+    WebViewer({
+      path: './pdfjs',
+      licenseKey: 'WQbdx5KD5SbQkjFwosWR',
+      css: './pdfjs/viewer.css?v=27',   // <-- chemin corrigé
+      initialDoc: file
+    }, document.getElementById('viewer')).then(instance => {
+      const { UI, Core } = instance;
+      const dv = Core.documentViewer;
 
-    // ---------- 1) MASQUER l’UI interne ----------
-    const KILL_CSS = `
-      [data-element="header"], #documentHeader, .Header, .Header *{
-        display:none!important; height:0!important; min-height:0!important;
-        padding:0!important; border:0!important;
+      /* ---------- Masquer l’UI interne ---------- */
+      const KILL_CSS = `
+        [data-element="header"], #documentHeader, .Header, .Header *{
+          display:none!important; height:0!important; min-height:0!important;
+          padding:0!important; border:0!important;
+        }
+        [data-element="toolsHeader"], [data-element="toolsOverlay"],
+        .toolsHeader, .toolsOverlay { display:none!important; }
+        [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
+        .PageNavOverlay, .pageNavOverlay { display:none!important; }
+        .DocumentContainer { background:#fff !important; }
+      `;
+      function injectCSSIntoUI(){
+        const doc = UI.iframeWindow?.document;
+        if (!doc) return;
+        if (!doc.querySelector('style[data-jsl-kill]')) {
+          const s = doc.createElement('style');
+          s.setAttribute('data-jsl-kill','');
+          s.textContent = KILL_CSS;
+          doc.head.appendChild(s);
+        }
       }
-      [data-element="toolsHeader"], [data-element="toolsOverlay"],
-      .toolsHeader, .toolsOverlay { display:none!important; }
-      [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
-      .PageNavOverlay, .pageNavOverlay { display:none!important; }
-      .DocumentContainer { background:#fff !important; }
-    `;
-
-    function injectCSSIntoUI(){
-      const doc = UI.iframeWindow?.document;
-      if (!doc) return;
-      if (!doc.querySelector('style[data-jsl-kill]')) {
-        const s = doc.createElement('style');
-        s.setAttribute('data-jsl-kill','');
-        s.textContent = KILL_CSS;
-        doc.head.appendChild(s);
+      function hideInternalUI(){
+        try {
+          UI.setHeaderItems?.(h => { h.splice(0, h.length); });
+          UI.updateElement?.('header', { hidden:true, disabled:true });
+          UI.disableElements?.([
+            'toolsHeader','toolsOverlay',
+            'pageNavOverlay','pageNavigationOverlay',
+            'ribbonsDropdownButton','menuButton','settingsButton','searchButton',
+            'notesPanel','notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
+            'leftPanelButton','shareButton','printButton','downloadButton','openFileButton',
+            'languageButton','themeChangeButton','fullscreenButton','toolbarGroupButton'
+          ]);
+          UI.closeElements?.(['toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay']);
+        } catch(e){}
+        injectCSSIntoUI();
       }
-    }
 
-    function hideInternalUI(){
-      try {
-        UI.setHeaderItems?.(h => { h.splice(0, h.length); });
-        UI.updateElement?.('header', { hidden:true, disabled:true });
-        UI.disableElements?.([
-          'toolsHeader','toolsOverlay',
-          'pageNavOverlay','pageNavigationOverlay',
-          'ribbonsDropdownButton','menuButton','settingsButton','searchButton',
-          'notesPanel','notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
-          'leftPanelButton','shareButton','printButton','downloadButton','openFileButton',
-          'languageButton','themeChangeButton','fullscreenButton','toolbarGroupButton'
-        ]);
-        UI.closeElements?.(['toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay']);
-      } catch(e){}
-      injectCSSIntoUI();
-    }
+      hideInternalUI();
+      const uiDoc = UI.iframeWindow?.document;
+      if (uiDoc) {
+        new MutationObserver(hideInternalUI)
+          .observe(uiDoc.documentElement, { childList:true, subtree:true });
+      }
 
-    // au montage + si l’UI se re-render
-    hideInternalUI();
-    const uiDoc = UI.iframeWindow?.document;
-    if (uiDoc) {
-      new MutationObserver(hideInternalUI)
-        .observe(uiDoc.documentElement, { childList:true, subtree:true });
-    }
+      /* ---------- Réglages d’affichage ---------- */
+      let ready = false, queue = [];
+      dv.addEventListener('documentLoaded', () => {
+        hideInternalUI();
+        try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(e){}
+        try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(e){}
+        try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(e){}
+        try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
+        try { dv.setCurrentPage?.(1); } catch(e){}
+        ready = true;
+        while (queue.length) run(queue.shift());
+      });
 
-    // ---------- 2) Réglages d’affichage ----------
-    let ready = false, queue = [];
-    dv.addEventListener('documentLoaded', () => {
-      hideInternalUI(); // re-cacher après chargement du doc
-      try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(e){}
-      try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(e){}
-      try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(e){}
-      try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
-      try { dv.setCurrentPage?.(1); } catch(e){}
-      ready = true;
-      while (queue.length) run(queue.shift());
+      /* ---------- Pont pour la barre EXTERNE ---------- */
+      function getZoom(){ return (UI.getZoomLevel?.() ?? dv.getZoomLevel?.() ?? 1); }
+      function setZoom(level){
+        if (UI.setZoomLevel) UI.setZoomLevel(level);
+        else if (dv.setZoomLevel) dv.setZoomLevel(level);
+        else if (dv.zoomTo) dv.zoomTo(level);
+      }
+      function zoomIn(){  setZoom(Math.min(getZoom()*1.1, 10)); }
+      function zoomOut(){ setZoom(Math.max(getZoom()/1.1, 0.05)); }
+
+      const actions = {
+        zin:   zoomIn,
+        zout:  zoomOut,
+        first: () => dv.setCurrentPage?.(1),
+        prev:  () => dv.setCurrentPage?.(Math.max(1, (dv.getCurrentPage?.()||1) - 1)),
+        next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1) + 1)),
+        last:  () => dv.setCurrentPage?.(dv.getPageCount?.()||1)
+      };
+      function run(act){ try{ actions[act]?.(); } catch(_){} }
+
+      window.addEventListener('message', (evt) => {
+        const data = evt.data || {};
+        if (data.type !== 'JSL_CMD' || !(data.act in actions)) return;
+        if (!ready) queue.push(data.act); else run(data.act);
+        evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
+      });
     });
-
-    // ---------- 3) Pont pour la barre EXTERNE ----------
-
-    // Helpers zoom robustes (fallback si UI.zoomIn/Out absents)
-    function getZoom() {
-      return (UI.getZoomLevel?.() ?? dv.getZoomLevel?.() ?? 1);
-    }
-    function setZoom(level) {
-      if (UI.setZoomLevel) UI.setZoomLevel(level);
-      else if (dv.setZoomLevel) dv.setZoomLevel(level);
-      else if (dv.zoomTo) dv.zoomTo(level);
-    }
-    function zoomIn(){  setZoom(Math.min(getZoom() * 1.1, 10)); }
-    function zoomOut(){ setZoom(Math.max(getZoom() / 1.1, 0.05)); }
-
-    const actions = {
-      zin:   zoomIn,
-      zout:  zoomOut,
-      first: () => dv.setCurrentPage?.(1),
-      prev:  () => dv.setCurrentPage?.(Math.max(1, (dv.getCurrentPage?.()||1) - 1)),
-      next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1) + 1)),
-      last:  () => dv.setCurrentPage?.(dv.getPageCount?.()||1)
-    };
-    function run(act){ try{ actions[act]?.(); } catch(_){} }
-
-    window.addEventListener('message', (evt) => {
-      const data = evt.data || {};
-      if (data.type !== 'JSL_CMD' || !(data.act in actions)) return;
-      if (!ready) queue.push(data.act); else run(data.act);
-      evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
-    });
-  });
-})();
-</script>
-
+  })();
+  </script>
 </body>
 </html>
