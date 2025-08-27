@@ -15,22 +15,21 @@
   <div id="viewer"></div>
 
   <!-- Lib WebViewer (selon ta capture, le fichier est à la racine) -->
-  <script src="webviewer.min.js"></script>
+  <script src="pdfjs/webviewer.min.js"></script>
 <script>
 (function(){
   const params = new URLSearchParams(location.search);
   const file = params.get('file') || 'sample.pdf';
 
   WebViewer({
-    path: 'pdfjs',
+    path: 'pdfjs', // le dossier qui contient /ui et /core
     licenseKey: 'WQbdx5KD5SbQkjFwosWR',
     initialDoc: file,
-    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=5' // ← URL absolue (bump v si tu modifies le CSS)
+    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=5'
   }, document.getElementById('viewer')).then(instance => {
     const { UI, Core } = instance;
     const dv = Core.documentViewer;
 
-    // Exécuter une action
     const run = (act) => {
       try {
         const page = dv.getCurrentPage?.() || 1;
@@ -46,7 +45,6 @@
       } catch(e){ console.warn('[viewer] act error:', act, e); }
     };
 
-    // FitWidth + file d’attente
     let ready = false, queue = [];
     dv.addEventListener('documentLoaded', () => {
       ready = true;
@@ -54,33 +52,30 @@
       while (queue.length) run(queue.shift());
     });
 
-    // Pont postMessage (accepte éditeur/public : on ne filtre plus par origin)
     window.addEventListener('message', (evt) => {
       const data = evt.data || {};
       if (data.type !== 'JSL_CMD') return;
 
-      // sécurité minimale : n’exécuter que nos 6 actions autorisées
       const allowedActs = new Set(['zin','zout','first','prev','next','last']);
       if (!allowedActs.has(data.act)) return;
 
       if (!ready) queue.push(data.act);
       else run(data.act);
 
-      // ACK (facultatif)
       evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
     });
 
-    // Fallback anti-barre (au cas où viewer.css ne charge pas)
-    const killHeaderCSS = `
-      #documentHeader, .Header, .Header *, [data-element="header"]{display:none!important;height:0!important;min-height:0!important;padding:0!important;border:0!important}
+    // Fallback anti-barre interne
+    const s = document.createElement('style');
+    s.textContent = `
+      #documentHeader,.Header,.Header*,[data-element="header"]{display:none!important;height:0!important;min-height:0!important;padding:0!important;border:0!important}
       [data-element="toolsHeader"],[data-element="toolsOverlay"],.toolsHeader,.toolsOverlay{display:none!important}
       [data-element="pageNavOverlay"],[data-element="pageNavigationOverlay"],.PageNavOverlay,.pageNavOverlay{display:none!important}
     `;
-    const s = document.createElement('style'); s.textContent = killHeaderCSS; s.setAttribute('data-jsl','kill-header'); document.head.appendChild(s);
+    s.setAttribute('data-jsl','kill-header');
+    document.head.appendChild(s);
   });
 })();
 </script>
-
-
 </body>
 </html>
