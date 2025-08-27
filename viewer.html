@@ -22,21 +22,18 @@
   const file = params.get('file') || 'sample.pdf';
 
   WebViewer({
-    path: 'pdfjs', // dossier avec /ui et /core
+    path: 'pdfjs',
     licenseKey: 'WQbdx5KD5SbQkjFwosWR',
     initialDoc: file,
-    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=6' // ← bump v si tu modifies le CSS
+    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=7' // bump si tu modifies viewer.css
   }, document.getElementById('viewer')).then(instance => {
     const { UI, Core } = instance;
     const dv = Core.documentViewer;
 
-    /* 1) MASQUER l’UI interne proprement (same-origin donc autorisé) */
+    // 1) Cache l'UI interne par l'API (same-origin, donc OK)
     try {
-      // Vider la barre du haut et la cacher
-      UI.setHeaderItems(h => { h.splice(0, h.length); });
+      UI.setHeaderItems?.(h => { h.splice(0, h.length); }); // vide la barre
       UI.updateElement?.('header', { hidden:true, disabled:true });
-
-      // Couper les autres éléments qu’on ne veut jamais voir
       UI.disableElements?.([
         'toolsHeader','toolsOverlay',
         'pageNavOverlay','pageNavigationOverlay',
@@ -45,20 +42,46 @@
         'leftPanelButton','shareButton','printButton','downloadButton','openFileButton',
         'languageButton','themeChangeButton','fullscreenButton','toolbarGroupButton'
       ]);
-
-      // Fermer d’éventuels overlays déjà ouverts
       UI.closeElements?.(['toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay']);
-    } catch(e) {
-      console.warn('[JSL] hide UI warning:', e);
+    } catch(e){ console.warn('[JSL] API hide UI:', e); }
+
+    // 2) Injecte le CSS DANS le document UI (vraiment efficace)
+    const KILL_CSS = `
+      [data-element="header"], #documentHeader, .Header, .Header * {
+        display:none !important; height:0 !important; min-height:0 !important;
+        padding:0 !important; border:0 !important;
+      }
+      [data-element="toolsHeader"], [data-element="toolsOverlay"],
+      .toolsHeader, .toolsOverlay { display:none !important; }
+      [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
+      .PageNavOverlay, .pageNavOverlay { display:none !important; }
+      .DocumentContainer { background:#fff !important; }
+    `;
+    function injectCSSIntoUI(){
+      const uiDoc = UI.iframeWindow?.document;
+      if (!uiDoc) return;
+      if (!uiDoc.querySelector('style[data-jsl-kill]')) {
+        const s = uiDoc.createElement('style');
+        s.setAttribute('data-jsl-kill','');
+        s.textContent = KILL_CSS;
+        uiDoc.head.appendChild(s);
+      }
+    }
+    // inject maintenant + si l’UI se re-rend
+    injectCSSIntoUI();
+    const uiDoc = UI.iframeWindow?.document;
+    if (uiDoc) {
+      new MutationObserver(injectCSSIntoUI).observe(uiDoc.documentElement, {childList:true, subtree:true});
     }
 
-    /* 2) Réglages de vue */
+    // 3) Réglages de vue
     dv.addEventListener('documentLoaded', () => {
       try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
       try { dv.setCurrentPage?.(1); } catch(e){}
     });
 
-    /* 3) Pont postMessage : commandes depuis Squarespace (barre EXTERNE) */
+    // 4) Pont postMessage pour la barre EXTERNE (Squarespace)
+    const actions = new Set(['zin','zout','first','prev','next','last']);
     const run = (act) => {
       const page = dv.getCurrentPage?.() || 1;
       const max  = dv.getPageCount?.()  || 1;
@@ -71,37 +94,17 @@
         case 'last':  dv.setCurrentPage?.(max); break;
       }
     };
-
     let ready = false, queue = [];
-    dv.addEventListener('documentLoaded', () => {
-      ready = true;
-      while (queue.length) run(queue.shift());
-    });
+    dv.addEventListener('documentLoaded', () => { ready = true; while (queue.length) run(queue.shift()); });
 
     window.addEventListener('message', (evt) => {
       const data = evt.data || {};
-      if (data.type !== 'JSL_CMD') return;
-      const allowedActs = new Set(['zin','zout','first','prev','next','last']);
-      if (!allowedActs.has(data.act)) return;
+      if (data.type !== 'JSL_CMD' || !actions.has(data.act)) return;
       if (!ready) queue.push(data.act); else run(data.act);
       evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
     });
-
-    /* 4) Filet de sécurité CSS (au cas où le CSS externe ne charge pas) */
-    const s = document.createElement('style');
-    s.textContent = `
-      /* cache tout header/outils résiduels */
-      #documentHeader, .Header, .Header *, [data-element="header"]{display:none!important;height:0!important;min-height:0!important;padding:0!important;border:0!important}
-      [data-element="toolsHeader"], [data-element="toolsOverlay"], .toolsHeader, .toolsOverlay{display:none!important}
-      [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"], .PageNavOverlay, .pageNavOverlay{display:none!important}
-      /* fond propre */
-      .DocumentContainer{ background:#fff !important; }
-    `;
-    s.setAttribute('data-jsl','kill-header');
-    document.head.appendChild(s);
   });
 })();
 </script>
-
 </body>
 </html>
