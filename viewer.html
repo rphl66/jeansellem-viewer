@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -8,30 +8,74 @@
     html,body { height:100%; margin:0 }
     #viewer   { height:100vh }
   </style>
-  <link rel="stylesheet" href="pdfjs/viewer.css"><!-- même origine -->
+  <!-- ton skin à la racine -->
+  <link rel="stylesheet" href="viewer.css">
 </head>
 <body>
   <div id="viewer"></div>
 
+  <!-- WebViewer (le dossier pdfjs/ contient ui/ etc.) -->
   <script src="pdfjs/webviewer.min.js"></script>
   <script>
+  (function(){
+    // PDF choisi via ?file=..., sinon "sample.pdf"
     const params = new URLSearchParams(location.search);
-    let file = params.get('file') || 'sample.pdf';
-
-    // Si on passe juste un nom → fichier du même repo
-    if (!/^https?:\/\//.test(file) && !file.startsWith('/')) {
-      file = file; // p.ex. '1971-sandro-adriani.pdf'
-    }
+    const file = params.get('file') || 'sample.pdf';
 
     WebViewer({
-      path: 'pdfjs',
+      path: 'pdfjs',               // dossier où se trouve l'UI
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
       initialDoc: file,
-      config: 'pdfjs/config.js'
-      // CSS déjà linké en <head> pour GitHub (pdfjs/viewer.css)
-    }, document.getElementById('viewer')).then(({ UI }) => {
-      if (/^https?:\/\//.test(file)) UI.loadDocument(file);
+      css: 'viewer.css'            // ton skin (racine)
+      // ⚠️ PAS de config.js ici
+    }, document.getElementById('viewer')).then(instance => {
+      const { UI, Core } = instance;
+      const dv = Core.documentViewer;
+
+      // Exécuter une action reçue du parent
+      const run = (act) => {
+        try {
+          const page = dv.getCurrentPage?.() || 1;
+          const max  = dv.getPageCount?.()  || 1;
+          switch (act) {
+            case 'zin':  UI.zoomIn?.(); break;
+            case 'zout': UI.zoomOut?.(); break;
+            case 'first': dv.setCurrentPage?.(1); break;
+            case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
+            case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
+            case 'last':  dv.setCurrentPage?.(max); break;
+          }
+        } catch(e){ console.warn('[viewer] act error:', act, e); }
+      };
+
+      // FitWidth à l'ouverture + file d’attente avant prêt
+      let ready = false, queue = [];
+      dv.addEventListener('documentLoaded', () => {
+        ready = true;
+        try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
+        while (queue.length) run(queue.shift());
+      });
+
+      // Pont postMessage : commandes depuis Squarespace (barre EXTERNE)
+      window.addEventListener('message', (evt) => {
+        const allowed = new Set([
+          'https://www.raphaelleonardlevy.com',
+          'https://raphaelleonardlevy.com',
+          'https://preview.squarespace.com' // utile en mode édition
+        ]);
+        if (!allowed.has(evt.origin)) return;
+
+        const data = evt.data || {};
+        if (data.type !== 'JSL_CMD') return;
+
+        if (!ready) queue.push(data.act);
+        else run(data.act);
+
+        // accusé de réception (optionnel)
+        evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
+      });
     });
+  })();
   </script>
 </body>
 </html>
