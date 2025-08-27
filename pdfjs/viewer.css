@@ -66,7 +66,7 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   box-shadow: none !important;
 }
 
-/* ---------- Filets de sécurité pour masquer l'UI interne ---------- */
+/* ---------- Masquer l'UI interne complètement ---------- */
 /* Masquer totalement l’en-tête interne */
 #documentHeader,
 .Header,
@@ -100,12 +100,12 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   display: none !important;
 }
 
-/* (Optionnel) Réserver un peu d’espace bas si besoin
-.DocumentContainer { padding-bottom: 56px !important; } */
+/* (Optionnel) fond clair propre sous le document */
+.DocumentContainer{ background:#fff !important; }
 
-/* --- Tue toute ancienne barre montée DANS l’IFRAME --- */
+/* --- Sécurité : si jamais une ancienne barre interne existait, on la cache --- */
+/* Tu peux supprimer ces deux règles si, plus tard, tu veux tester une barre interne. */
 #app #jsl-toolbar,
 #app .jsl-toolbar {
   display: none !important;
 }
-
