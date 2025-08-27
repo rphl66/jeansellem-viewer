@@ -116,3 +116,15 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 }
 /* Évite tout espace en haut du document */
 .DocumentContainer { padding-top: 0 !important; }
+
+/* Réduction des gaps et suppression d'ombres entre pages */
+.DocumentContainer .pageContainer{
+  margin: 0 auto !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+.DocumentContainer .pageContainer + .pageContainer{
+  margin-top: 0 !important;
+}
+
