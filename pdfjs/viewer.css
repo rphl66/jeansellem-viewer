@@ -102,3 +102,10 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 
 /* (Optionnel) Réserver un peu d’espace bas si besoin
 .DocumentContainer { padding-bottom: 56px !important; } */
+
+/* --- Tue toute ancienne barre montée DANS l’IFRAME --- */
+#app #jsl-toolbar,
+#app .jsl-toolbar {
+  display: none !important;
+}
+
