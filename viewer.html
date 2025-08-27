@@ -93,13 +93,26 @@
     });
 
     // ---------- 3) Pont pour la barre EXTERNE ----------
+
+    // Helpers zoom robustes (fallback si UI.zoomIn/Out absents)
+    function getZoom() {
+      return (UI.getZoomLevel?.() ?? dv.getZoomLevel?.() ?? 1);
+    }
+    function setZoom(level) {
+      if (UI.setZoomLevel) UI.setZoomLevel(level);
+      else if (dv.setZoomLevel) dv.setZoomLevel(level);
+      else if (dv.zoomTo) dv.zoomTo(level);
+    }
+    function zoomIn(){  setZoom(Math.min(getZoom() * 1.1, 10)); }
+    function zoomOut(){ setZoom(Math.max(getZoom() / 1.1, 0.05)); }
+
     const actions = {
-      zin:  () => UI.zoomIn?.(),
-      zout: () => UI.zoomOut?.(),
-      first:() => dv.setCurrentPage?.(1),
-      prev: () => dv.setCurrentPage?.(Math.max(1, (dv.getCurrentPage?.()||1) - 1)),
-      next: () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1) + 1)),
-      last: () => dv.setCurrentPage?.(dv.getPageCount?.()||1)
+      zin:   zoomIn,
+      zout:  zoomOut,
+      first: () => dv.setCurrentPage?.(1),
+      prev:  () => dv.setCurrentPage?.(Math.max(1, (dv.getCurrentPage?.()||1) - 1)),
+      next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1) + 1)),
+      last:  () => dv.setCurrentPage?.(dv.getPageCount?.()||1)
     };
     function run(act){ try{ actions[act]?.(); } catch(_){} }
 
