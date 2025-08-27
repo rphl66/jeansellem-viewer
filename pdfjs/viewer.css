@@ -1,5 +1,5 @@
 /* =========================================================
-   JEANSELLEM — PDF Viewer (skin clair + barre flottante)
+   JEANSELLEM — PDF Viewer (skin clair, SANS barre externe)
    ========================================================= */
 
 /* Police */
@@ -10,7 +10,7 @@
   --primary-color: #ffffff;
   --text-color: #111111;
 
-  /* Boutons génériques */
+  /* Boutons génériques de l'UI interne */
   --btn-bg: #ffffff;
   --btn-bg-hover: #f2f2f2;
   --btn-bg-active: #ffffff;
@@ -18,28 +18,16 @@
 
   --toolbar-gap: 10px;
 
-  /* Bouton plein écran (header) */
+  /* Bouton plein écran (si jamais tu le remets un jour) */
   --fs-bg: #000000;
   --fs-fg: #ffffff;
   --fs-hover: #222222;
   --fs-active: #ffffff;
 
   --font-family: 'Overpass', system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
-
-  /* Barre flottante */
-  --tlb-bg: rgba(255,255,255,0.95);
-  --tlb-fg: #000;
-  --tlb-sep: rgba(0,0,0,0.15);
-  --tlb-shadow: 0 6px 16px rgba(0,0,0,.15);
-  --tlb-radius: 10px;
-  --tlb-btn-size: 36px;
-
-  --tlb-fs-bg: #000;
-  --tlb-fs-fg: #fff;
-  --tlb-fs-hover: #222;
 }
 
-/* ---------- Typo / structure UI ---------- */
+/* ---------- Typo / structure UI interne ---------- */
 body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   font-family: var(--font-family) !important;
 }
@@ -50,7 +38,7 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 }
 #documentHeader, .DocumentContainer { background-color: var(--primary-color) !important; }
 
-/* Espacement header */
+/* Espacement header (si des boutons réapparaissent un jour) */
 .Header .Button,
 .Header [data-element="zoomDropdown"] {
   margin: 0 calc(var(--toolbar-gap) / 2) !important;
@@ -66,17 +54,6 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 .Button:hover { background: var(--btn-bg-hover) !important; }
 .Button.active, .Button:active { background: var(--btn-bg-active) !important; color:#fff !important; }
 
-/* Bouton plein écran (header) */
-.Button[data-element="myFullscreenButton"]{
-  background: var(--fs-bg) !important;
-  color: var(--fs-fg) !important;
-}
-.Button[data-element="myFullscreenButton"]:hover{ background: var(--fs-hover) !important; }
-.Button[data-element="myFullscreenButton"].active,
-.Button[data-element="myFullscreenButton"]:active{
-  background: var(--fs-active) !important; color:#fff !important;
-}
-
 /* Icônes / textes */
 .Icon, .Text, .Label { color: var(--text-color) !important; fill: var(--text-color) !important; }
 
@@ -89,35 +66,8 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   box-shadow: none !important;
 }
 
-/* ---------- Caches “filet de sécurité” côté CSS ---------- */
-/* Si des barres d’annotation réapparaissent, on les coupe */
-[data-element="toolsHeader"],
-[data-element="toolsOverlay"],
-.toolsHeader,
-.toolsOverlay {
-  display: none !important;
-}
-/* Cacher le sélecteur de groupes (“Annotate” etc.) s’il revenait */
-[data-element^="toolbarGroup-"],
-[data-element="toolbarGroupButton"]{
-  display:none !important;
-}
-/* Vider visuellement la barre du haut (on garde juste le fond blanc) */
-.Header .Button,
-.Header [data-element],
-[data-element="toolsHeader"],
-[data-element="toolsOverlay"]{
-  display: none !important;
-}
-
-/* Supprimer complètement le mini-overlay “x/xx” */
-[data-element="pageNavOverlay"],
-[data-element="pageNavigationOverlay"],
-.PageNavOverlay,
-.pageNavOverlay { display: none !important; }
-
-}
-/* --- Supprime totalement l’en-tête interne --- */
+/* ---------- Filets de sécurité pour masquer l'UI interne ---------- */
+/* Masquer totalement l’en-tête interne */
 #documentHeader,
 .Header,
 .Header * {
@@ -128,7 +78,21 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   border: 0 !important;
 }
 
-/* Cache aussi le petit overlay x/xx */
+/* Masquer toute éventuelle barre d’annotation */
+[data-element="toolsHeader"],
+[data-element="toolsOverlay"],
+.toolsHeader,
+.toolsOverlay {
+  display: none !important;
+}
+
+/* Cacher le sélecteur de groupes (“Annotate”, etc.) s’il revenait */
+[data-element^="toolbarGroup-"],
+[data-element="toolbarGroupButton"]{
+  display:none !important;
+}
+
+/* Supprimer complètement le mini-overlay “x/xx” */
 [data-element="pageNavOverlay"],
 [data-element="pageNavigationOverlay"],
 .PageNavOverlay,
@@ -136,62 +100,5 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
   display: none !important;
 }
 
-/* ---------- Barre flottante (interne au viewer) ---------- */
-/* Barre en dessous du PDF */
-#jsl-toolbar.jsl-toolbar {
-  position: relative;        /* plus fixé */
-  left: auto;
-  bottom: auto;
-  margin: 20px auto 0;       /* espace au-dessus + centrage */
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--tlb-bg);
-  color: var(--tlb-fg);
-  border-radius: var(--tlb-radius);
-  box-shadow: var(--tlb-shadow);
-  border: 1px solid rgba(0,0,0,.08);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-
-#jsl-toolbar .jsl-btn{
-  width: var(--tlb-btn-size);
-  height: var(--tlb-btn-size);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: var(--tlb-fg);
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-}
-#jsl-toolbar .jsl-btn:hover{ background: rgba(0,0,0,.06); }
-
-#jsl-toolbar .jsl-sep{
-  display: inline-block;
-  width: 1px;
-  height: 24px;
-  background: var(--tlb-sep);
-  margin: 0 4px;
-}
-
-/* Bouton plein écran (barre flottante) */
-#jsl-toolbar .jsl-btn-fs{
-  background: var(--tlb-fs-bg);
-  color: var(--tlb-fs-fg);
-  border-radius: 8px;
-  padding: 0 8px;
-}
-#jsl-toolbar .jsl-btn-fs:hover{ background: var(--tlb-fs-hover); }
-
-/* Mobile + safe area iOS */
-@media (max-width: 768px){
-  #jsl-toolbar.jsl-toolbar{ bottom: 16px; --tlb-btn-size: 34px; }
-}
-@supports (padding: max(0px)) {
-  #jsl-toolbar.jsl-toolbar { bottom: calc(16px + env(safe-area-inset-bottom)); }
-}
+/* (Optionnel) Réserver un peu d’espace bas si besoin
+.DocumentContainer { padding-bottom: 56px !important; } */
