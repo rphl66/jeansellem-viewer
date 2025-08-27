@@ -22,16 +22,15 @@
   const file = params.get('file') || 'sample.pdf';
 
   WebViewer({
-    path: 'pdfjs', // dossier qui contient /ui et /core
+    path: 'pdfjs',
     licenseKey: 'WQbdx5KD5SbQkjFwosWR',
     initialDoc: file,
-    // ✅ URL ABSOLUE (bump v=4 si tu modifies viewer.css)
-    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=5'
+    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=5' // ← URL absolue (bump v si tu modifies le CSS)
   }, document.getElementById('viewer')).then(instance => {
     const { UI, Core } = instance;
     const dv = Core.documentViewer;
 
-    // --- Actions pilotées depuis Squarespace via postMessage ---
+    // Exécuter une action
     const run = (act) => {
       try {
         const page = dv.getCurrentPage?.() || 1;
@@ -47,7 +46,7 @@
       } catch(e){ console.warn('[viewer] act error:', act, e); }
     };
 
-    // FitWidth + file d'attente avant "prêt"
+    // FitWidth + file d’attente
     let ready = false, queue = [];
     dv.addEventListener('documentLoaded', () => {
       ready = true;
@@ -55,43 +54,33 @@
       while (queue.length) run(queue.shift());
     });
 
-    // --- Pont postMessage (reçoit les clics de la barre extérieure) ---
+    // Pont postMessage (accepte éditeur/public : on ne filtre plus par origin)
     window.addEventListener('message', (evt) => {
-      const allowed = new Set([
-        'https://www.raphaelleonardlevy.com',
-        'https://raphaelleonardlevy.com',
-        'https://preview.squarespace.com'
-      ]);
-      if (!allowed.has(evt.origin)) return;
-
       const data = evt.data || {};
       if (data.type !== 'JSL_CMD') return;
+
+      // sécurité minimale : n’exécuter que nos 6 actions autorisées
+      const allowedActs = new Set(['zin','zout','first','prev','next','last']);
+      if (!allowedActs.has(data.act)) return;
 
       if (!ready) queue.push(data.act);
       else run(data.act);
 
-      // accusé de réception (facultatif)
+      // ACK (facultatif)
       evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
     });
 
-    // --- Fallback "anti-barre interne" (si le CSS ne charge pas) ---
+    // Fallback anti-barre (au cas où viewer.css ne charge pas)
     const killHeaderCSS = `
-      #documentHeader, .Header, .Header *, [data-element="header"]{
-        display:none!important; height:0!important; min-height:0!important;
-        padding:0!important; border:0!important;
-      }
-      [data-element="toolsHeader"], [data-element="toolsOverlay"],
-      .toolsHeader, .toolsOverlay,
-      [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
-      .PageNavOverlay, .pageNavOverlay { display:none!important; }
+      #documentHeader, .Header, .Header *, [data-element="header"]{display:none!important;height:0!important;min-height:0!important;padding:0!important;border:0!important}
+      [data-element="toolsHeader"],[data-element="toolsOverlay"],.toolsHeader,.toolsOverlay{display:none!important}
+      [data-element="pageNavOverlay"],[data-element="pageNavigationOverlay"],.PageNavOverlay,.pageNavOverlay{display:none!important}
     `;
-    const s = document.createElement('style');
-    s.setAttribute('data-jsl','kill-header');
-    s.textContent = killHeaderCSS;
-    document.head.appendChild(s);
+    const s = document.createElement('style'); s.textContent = killHeaderCSS; s.setAttribute('data-jsl','kill-header'); document.head.appendChild(s);
   });
 })();
 </script>
+
 
 </body>
 </html>
