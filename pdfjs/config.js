@@ -21,7 +21,8 @@ window.addEventListener('viewerLoaded', () => {
   }
 
   // --- verrouillages classiques
-  UI.setToolbarGroup?.(UI.ToolbarGroup.View);
+  // UI.setToolbarGroup?.(UI.ToolbarGroup.View);   // (fix) on ne l'appelle plus en 8.7
+
   UI.setFeatureFlags?.({ disableLocalFilePicker:true, disablePrint:true, disableDownload:true });
 
   // --- vider complètement la barre du haut
