@@ -22,60 +22,86 @@
   const file = params.get('file') || 'sample.pdf';
 
   WebViewer({
-    path: 'pdfjs', // le dossier qui contient /ui et /core
+    path: 'pdfjs', // dossier avec /ui et /core
     licenseKey: 'WQbdx5KD5SbQkjFwosWR',
     initialDoc: file,
-    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=5'
+    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=6' // ← bump v si tu modifies le CSS
   }, document.getElementById('viewer')).then(instance => {
     const { UI, Core } = instance;
     const dv = Core.documentViewer;
 
+    /* 1) MASQUER l’UI interne proprement (same-origin donc autorisé) */
+    try {
+      // Vider la barre du haut et la cacher
+      UI.setHeaderItems(h => { h.splice(0, h.length); });
+      UI.updateElement?.('header', { hidden:true, disabled:true });
+
+      // Couper les autres éléments qu’on ne veut jamais voir
+      UI.disableElements?.([
+        'toolsHeader','toolsOverlay',
+        'pageNavOverlay','pageNavigationOverlay',
+        'ribbonsDropdownButton','menuButton','settingsButton','searchButton',
+        'notesPanel','notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
+        'leftPanelButton','shareButton','printButton','downloadButton','openFileButton',
+        'languageButton','themeChangeButton','fullscreenButton','toolbarGroupButton'
+      ]);
+
+      // Fermer d’éventuels overlays déjà ouverts
+      UI.closeElements?.(['toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay']);
+    } catch(e) {
+      console.warn('[JSL] hide UI warning:', e);
+    }
+
+    /* 2) Réglages de vue */
+    dv.addEventListener('documentLoaded', () => {
+      try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
+      try { dv.setCurrentPage?.(1); } catch(e){}
+    });
+
+    /* 3) Pont postMessage : commandes depuis Squarespace (barre EXTERNE) */
     const run = (act) => {
-      try {
-        const page = dv.getCurrentPage?.() || 1;
-        const max  = dv.getPageCount?.()  || 1;
-        switch (act) {
-          case 'zin':  UI.zoomIn?.(); break;
-          case 'zout': UI.zoomOut?.(); break;
-          case 'first': dv.setCurrentPage?.(1); break;
-          case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
-          case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
-          case 'last':  dv.setCurrentPage?.(max); break;
-        }
-      } catch(e){ console.warn('[viewer] act error:', act, e); }
+      const page = dv.getCurrentPage?.() || 1;
+      const max  = dv.getPageCount?.()  || 1;
+      switch (act) {
+        case 'zin':  UI.zoomIn?.(); break;
+        case 'zout': UI.zoomOut?.(); break;
+        case 'first': dv.setCurrentPage?.(1); break;
+        case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
+        case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
+        case 'last':  dv.setCurrentPage?.(max); break;
+      }
     };
 
     let ready = false, queue = [];
     dv.addEventListener('documentLoaded', () => {
       ready = true;
-      try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
       while (queue.length) run(queue.shift());
     });
 
     window.addEventListener('message', (evt) => {
       const data = evt.data || {};
       if (data.type !== 'JSL_CMD') return;
-
       const allowedActs = new Set(['zin','zout','first','prev','next','last']);
       if (!allowedActs.has(data.act)) return;
-
-      if (!ready) queue.push(data.act);
-      else run(data.act);
-
+      if (!ready) queue.push(data.act); else run(data.act);
       evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
     });
 
-    // Fallback anti-barre interne
+    /* 4) Filet de sécurité CSS (au cas où le CSS externe ne charge pas) */
     const s = document.createElement('style');
     s.textContent = `
-      #documentHeader,.Header,.Header*,[data-element="header"]{display:none!important;height:0!important;min-height:0!important;padding:0!important;border:0!important}
-      [data-element="toolsHeader"],[data-element="toolsOverlay"],.toolsHeader,.toolsOverlay{display:none!important}
-      [data-element="pageNavOverlay"],[data-element="pageNavigationOverlay"],.PageNavOverlay,.pageNavOverlay{display:none!important}
+      /* cache tout header/outils résiduels */
+      #documentHeader, .Header, .Header *, [data-element="header"]{display:none!important;height:0!important;min-height:0!important;padding:0!important;border:0!important}
+      [data-element="toolsHeader"], [data-element="toolsOverlay"], .toolsHeader, .toolsOverlay{display:none!important}
+      [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"], .PageNavOverlay, .pageNavOverlay{display:none!important}
+      /* fond propre */
+      .DocumentContainer{ background:#fff !important; }
     `;
     s.setAttribute('data-jsl','kill-header');
     document.head.appendChild(s);
   });
 })();
 </script>
+
 </body>
 </html>
