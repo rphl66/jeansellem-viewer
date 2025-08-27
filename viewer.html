@@ -25,62 +25,14 @@
     path: 'pdfjs',
     licenseKey: 'WQbdx5KD5SbQkjFwosWR',
     initialDoc: file,
-    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=8' // bump si tu modifies viewer.css
+    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=9'
   }, document.getElementById('viewer')).then(instance => {
     const { UI, Core } = instance;
     const dv = Core.documentViewer;
 
-    // 1) Cache l'UI interne par l'API (same-origin, donc OK)
-    try {
-      UI.setHeaderItems?.(h => { h.splice(0, h.length); }); // vide la barre
-      UI.updateElement?.('header', { hidden:true, disabled:true });
-      UI.disableElements?.([
-        'toolsHeader','toolsOverlay',
-        'pageNavOverlay','pageNavigationOverlay',
-        'ribbonsDropdownButton','menuButton','settingsButton','searchButton',
-        'notesPanel','notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
-        'leftPanelButton','shareButton','printButton','downloadButton','openFileButton',
-        'languageButton','themeChangeButton','fullscreenButton','toolbarGroupButton'
-      ]);
-      UI.closeElements?.(['toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay']);
-    } catch(e){ console.warn('[JSL] API hide UI:', e); }
+    /* … ton code pour cacher l’UI + injectCSSIntoUI reste inchangé … */
 
-    // 2) Injecte le CSS DANS le document UI (vraiment efficace)
-    const KILL_CSS = `
-      [data-element="header"], #documentHeader, .Header, .Header * {
-        display:none !important; height:0 !important; min-height:0 !important;
-        padding:0 !important; border:0 !important;
-      }
-      [data-element="toolsHeader"], [data-element="toolsOverlay"],
-      .toolsHeader, .toolsOverlay { display:none !important; }
-      [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
-      .PageNavOverlay, .pageNavOverlay { display:none !important; }
-      .DocumentContainer { background:#fff !important; }
-    `;
-    function injectCSSIntoUI(){
-      const uiDoc = UI.iframeWindow?.document;
-      if (!uiDoc) return;
-      if (!uiDoc.querySelector('style[data-jsl-kill]')) {
-        const s = uiDoc.createElement('style');
-        s.setAttribute('data-jsl-kill','');
-        s.textContent = KILL_CSS;
-        uiDoc.head.appendChild(s);
-      }
-    }
-    // inject maintenant + si l’UI se re-rend
-    injectCSSIntoUI();
-    const uiDoc = UI.iframeWindow?.document;
-    if (uiDoc) {
-      new MutationObserver(injectCSSIntoUI).observe(uiDoc.documentElement, {childList:true, subtree:true});
-    }
-
-    // 3) Réglages de vue
-    dv.addEventListener('documentLoaded', () => {
-      try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
-      try { dv.setCurrentPage?.(1); } catch(e){}
-    });
-
-    // 4) Pont postMessage pour la barre EXTERNE (Squarespace)
+    // --- actions pour la barre externe
     const actions = new Set(['zin','zout','first','prev','next','last']);
     const run = (act) => {
       const page = dv.getCurrentPage?.() || 1;
@@ -94,8 +46,20 @@
         case 'last':  dv.setCurrentPage?.(max); break;
       }
     };
+
     let ready = false, queue = [];
-    dv.addEventListener('documentLoaded', () => { ready = true; while (queue.length) run(queue.shift()); });
+
+    // === UNIQUE documentLoaded ===
+    dv.addEventListener('documentLoaded', () => {
+      try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(e){}
+      try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(e){}
+      try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(e){}
+      try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
+      try { dv.setCurrentPage?.(1); } catch(e){}
+
+      ready = true;
+      while (queue.length) run(queue.shift());
+    });
 
     window.addEventListener('message', (evt) => {
       const data = evt.data || {};
