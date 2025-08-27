@@ -15,68 +15,83 @@
   <div id="viewer"></div>
 
   <!-- Lib WebViewer (selon ta capture, le fichier est à la racine) -->
-  <script src="pdfjs/webviewer.min.js"></script>
-  <script>
-  (function(){
-    // Choix du PDF via ?file=... sinon "sample.pdf"
-    const params = new URLSearchParams(location.search);
-    const file = params.get('file') || 'sample.pdf';
+  <script src="webviewer.min.js"></script>
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const file = params.get('file') || 'sample.pdf';
 
-    WebViewer({
-      path: 'pdfjs',  // dossier qui contient /ui/ et /core/
-      licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      initialDoc: file,
-      // IMPORTANT : URL ABSOLUE pour que l'UI interne charge bien ton CSS
-      css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=1'
-      // ⚠️ NE PAS ajouter config.js ici (il cassait en cross-origin)
-    }, document.getElementById('viewer')).then(instance => {
-      const { UI, Core } = instance;
-      const dv = Core.documentViewer;
+  WebViewer({
+    path: 'pdfjs', // dossier qui contient /ui et /core
+    licenseKey: 'WQbdx5KD5SbQkjFwosWR',
+    initialDoc: file,
+    // ✅ URL ABSOLUE (bump v=4 si tu modifies viewer.css)
+    css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=5'
+  }, document.getElementById('viewer')).then(instance => {
+    const { UI, Core } = instance;
+    const dv = Core.documentViewer;
 
-      // petit helper : exécuter une action
-      const run = (act) => {
-        try {
-          const page = dv.getCurrentPage?.() || 1;
-          const max  = dv.getPageCount?.()  || 1;
-          switch (act) {
-            case 'zin':  UI.zoomIn?.(); break;
-            case 'zout': UI.zoomOut?.(); break;
-            case 'first': dv.setCurrentPage?.(1); break;
-            case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
-            case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
-            case 'last':  dv.setCurrentPage?.(max); break;
-          }
-        } catch(e){ console.warn('[viewer] act error:', act, e); }
-      };
+    // --- Actions pilotées depuis Squarespace via postMessage ---
+    const run = (act) => {
+      try {
+        const page = dv.getCurrentPage?.() || 1;
+        const max  = dv.getPageCount?.()  || 1;
+        switch (act) {
+          case 'zin':  UI.zoomIn?.(); break;
+          case 'zout': UI.zoomOut?.(); break;
+          case 'first': dv.setCurrentPage?.(1); break;
+          case 'prev':  dv.setCurrentPage?.(Math.max(1, page - 1)); break;
+          case 'next':  dv.setCurrentPage?.(Math.min(max, page + 1)); break;
+          case 'last':  dv.setCurrentPage?.(max); break;
+        }
+      } catch(e){ console.warn('[viewer] act error:', act, e); }
+    };
 
-      // FitWidth + file d'attente avant "prêt"
-      let ready = false, queue = [];
-      dv.addEventListener('documentLoaded', () => {
-        ready = true;
-        try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
-        while (queue.length) run(queue.shift());
-      });
-
-      // Pont postMessage : reçoit les commandes de la page Squarespace (parent)
-      window.addEventListener('message', (evt) => {
-        const allowed = new Set([
-          'https://www.raphaelleonardlevy.com',
-          'https://raphaelleonardlevy.com',
-          'https://preview.squarespace.com' // utile en mode édition
-        ]);
-        if (!allowed.has(evt.origin)) return;
-
-        const data = evt.data || {};
-        if (data.type !== 'JSL_CMD') return;
-
-        if (!ready) queue.push(data.act);
-        else run(data.act);
-
-        // accusé de réception (optionnel)
-        evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
-      });
+    // FitWidth + file d'attente avant "prêt"
+    let ready = false, queue = [];
+    dv.addEventListener('documentLoaded', () => {
+      ready = true;
+      try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(e){}
+      while (queue.length) run(queue.shift());
     });
-  })();
-  </script>
+
+    // --- Pont postMessage (reçoit les clics de la barre extérieure) ---
+    window.addEventListener('message', (evt) => {
+      const allowed = new Set([
+        'https://www.raphaelleonardlevy.com',
+        'https://raphaelleonardlevy.com',
+        'https://preview.squarespace.com'
+      ]);
+      if (!allowed.has(evt.origin)) return;
+
+      const data = evt.data || {};
+      if (data.type !== 'JSL_CMD') return;
+
+      if (!ready) queue.push(data.act);
+      else run(data.act);
+
+      // accusé de réception (facultatif)
+      evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
+    });
+
+    // --- Fallback "anti-barre interne" (si le CSS ne charge pas) ---
+    const killHeaderCSS = `
+      #documentHeader, .Header, .Header *, [data-element="header"]{
+        display:none!important; height:0!important; min-height:0!important;
+        padding:0!important; border:0!important;
+      }
+      [data-element="toolsHeader"], [data-element="toolsOverlay"],
+      .toolsHeader, .toolsOverlay,
+      [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
+      .PageNavOverlay, .pageNavOverlay { display:none!important; }
+    `;
+    const s = document.createElement('style');
+    s.setAttribute('data-jsl','kill-header');
+    s.textContent = killHeaderCSS;
+    document.head.appendChild(s);
+  });
+})();
+</script>
+
 </body>
 </html>
