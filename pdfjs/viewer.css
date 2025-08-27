@@ -109,3 +109,10 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 #app .jsl-toolbar {
   display: none !important;
 }
+/* Ceintures & bretelles : cache toutes variantes du header */
+[data-element="header"], .AppHeader { 
+  display:none !important; height:0 !important; min-height:0 !important;
+  padding:0 !important; border:0 !important;
+}
+/* Évite tout espace en haut du document */
+.DocumentContainer { padding-top: 0 !important; }
