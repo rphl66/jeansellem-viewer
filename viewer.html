@@ -8,31 +8,32 @@
     html,body { height:100%; margin:0 }
     #viewer   { height:100vh }
   </style>
-  <!-- ton skin à la racine -->
+  <!-- ton skin (à la racine du repo) -->
   <link rel="stylesheet" href="viewer.css">
 </head>
 <body>
   <div id="viewer"></div>
 
-  <!-- WebViewer (le dossier pdfjs/ contient ui/ etc.) -->
+  <!-- Lib WebViewer (selon ta capture, le fichier est à la racine) -->
   <script src="pdfjs/webviewer.min.js"></script>
   <script>
   (function(){
-    // PDF choisi via ?file=..., sinon "sample.pdf"
+    // Choix du PDF via ?file=... sinon "sample.pdf"
     const params = new URLSearchParams(location.search);
     const file = params.get('file') || 'sample.pdf';
 
     WebViewer({
-      path: 'pdfjs',               // dossier où se trouve l'UI
+      path: 'pdfjs',  // dossier qui contient /ui/ et /core/
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
       initialDoc: file,
-      css: 'viewer.css'            // ton skin (racine)
-      // ⚠️ PAS de config.js ici
+      // IMPORTANT : URL ABSOLUE pour que l'UI interne charge bien ton CSS
+      css: 'https://rphl66.github.io/jeansellem-viewer/viewer.css?v=1'
+      // ⚠️ NE PAS ajouter config.js ici (il cassait en cross-origin)
     }, document.getElementById('viewer')).then(instance => {
       const { UI, Core } = instance;
       const dv = Core.documentViewer;
 
-      // Exécuter une action reçue du parent
+      // petit helper : exécuter une action
       const run = (act) => {
         try {
           const page = dv.getCurrentPage?.() || 1;
@@ -48,7 +49,7 @@
         } catch(e){ console.warn('[viewer] act error:', act, e); }
       };
 
-      // FitWidth à l'ouverture + file d’attente avant prêt
+      // FitWidth + file d'attente avant "prêt"
       let ready = false, queue = [];
       dv.addEventListener('documentLoaded', () => {
         ready = true;
@@ -56,7 +57,7 @@
         while (queue.length) run(queue.shift());
       });
 
-      // Pont postMessage : commandes depuis Squarespace (barre EXTERNE)
+      // Pont postMessage : reçoit les commandes de la page Squarespace (parent)
       window.addEventListener('message', (evt) => {
         const allowed = new Set([
           'https://www.raphaelleonardlevy.com',
