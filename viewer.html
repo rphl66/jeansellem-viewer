@@ -8,9 +8,22 @@
   <!-- Skin facultatif -->
   <link rel="stylesheet" href="./pdfjs/viewer.css?v=28" />
   <style>
-    html,body { height:100%; margin:0 }
-    #viewer   { height:100vh }
-  </style>
+  /* remplace l'ancien style */
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: transparent; /* évite toute “bande” de fond */
+  }
+  /* le conteneur WebViewer remplit vraiment l'iframe */
+  #viewer{
+    position: absolute;
+    inset: 0;
+    height: 100dvh;    /* modernes */
+    height: 100svh;    /* iOS 15+ */
+    height: 100vh;     /* fallback */
+  }
+</style>
+
 </head>
 <body>
   <div id="viewer"></div>
