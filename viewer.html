@@ -5,30 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Viewer</title>
 
-  <!-- Skin facultatif -->
   <link rel="stylesheet" href="./pdfjs/viewer.css?v=28" />
   <style>
-  /* remplace l'ancien style */
-  html, body {
-    height: 100%;
-    margin: 0;
-    background: transparent; /* évite toute “bande” de fond */
-  }
-  /* le conteneur WebViewer remplit vraiment l'iframe */
-  #viewer{
-    position: absolute;
-    inset: 0;
-    height: 100dvh;    /* modernes */
-    height: 100svh;    /* iOS 15+ */
-    height: 100vh;     /* fallback */
-  }
-</style>
-
+    html, body { height:100%; margin:0; background:transparent; }
+    /* Le conteneur remplit vraiment l’iframe et isole le scroll */
+    #viewer{
+      position:absolute; inset:0;
+      height:100dvh; height:100svh; height:100vh;
+      overscroll-behavior: contain;
+    }
+  </style>
 </head>
 <body>
   <div id="viewer"></div>
 
-  <!-- Librairie WebViewer (dossier /pdfjs) -->
   <script src="pdfjs/webviewer.min.js"></script>
   <script>
   (function(){
@@ -39,12 +29,12 @@
       path: 'pdfjs',
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
       css: 'https://rphl66.github.io/jeansellem-viewer/pdfjs/viewer.css?v=29',
-      initialDoc: file                 // ← ← ← IMPORTANT : charge le PDF demandé
+      initialDoc: file
     }, document.getElementById('viewer')).then(instance => {
       const { UI, Core } = instance;
       const dv = Core.documentViewer;
 
-      // Épure l’UI interne
+      // — Nettoyage UI interne + anti "feuilletage"
       const KILL_CSS = `
         [data-element="header"], #documentHeader, .Header, .Header *{
           display:none!important; height:0!important; min-height:0!important;
@@ -54,13 +44,25 @@
         .toolsHeader, .toolsOverlay { display:none!important; }
         [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
         .PageNavOverlay, .pageNavOverlay { display:none!important; }
-        .DocumentContainer { background:#fff !important; }
+
+        /* Fond blanc + anti-inertie + aucun snap */
+        .DocumentContainer{
+          background:#fff !important;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: auto;
+          scroll-snap-type: none !important;
+        }
+        .DocumentContainer *{
+          scroll-snap-align: none !important;
+        }
       `;
       function injectCSSIntoUI(){
         const doc = UI.iframeWindow?.document;
         if (!doc || doc.querySelector('style[data-jsl-kill]')) return;
-        const s = doc.createElement('style'); s.setAttribute('data-jsl-kill','');
-        s.textContent = KILL_CSS; doc.head.appendChild(s);
+        const s = doc.createElement('style');
+        s.setAttribute('data-jsl-kill','');
+        s.textContent = KILL_CSS;
+        doc.head.appendChild(s);
       }
       function hideInternalUI(){
         try {
@@ -83,19 +85,27 @@
       if (uiDoc) new MutationObserver(hideInternalUI)
         .observe(uiDoc.documentElement, { childList:true, subtree:true });
 
+      // — Réglages anti-feuilletage (conservant les liens internes)
+      function setSmoothScrollModes(){
+        try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(_){}
+        try { UI.setScrollMode?.(UI.ScrollMode.CONTINUOUS); } catch(_){}
+        try { UI.setPageTransitionMode?.(UI.PageTransitionMode.None); } catch(_){}
+        try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_){}
+      }
+
       dv.addEventListener('documentLoaded', () => {
         hideInternalUI();
-        try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(_){}
-        try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(_){}
-        try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(_){}
-        try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_){}
+        setSmoothScrollModes();
         try { dv.setCurrentPage?.(1); } catch(_){}
       });
 
-      // Pont commandes depuis la toolbar externe
+      // — Re-applique si l’utilisateur change un réglage via API interne
+      dv.addEventListener('pagesUpdated', setSmoothScrollModes);
+
+      // — Bridge commandes depuis la toolbar externe
       const actions = {
-        zin:  () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) * 1.1),
-        zout: () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) / 1.1),
+        zin:   () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) * 1.1),
+        zout:  () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) / 1.1),
         first: () => dv.setCurrentPage?.(1),
         prev:  () => dv.setCurrentPage?.(Math.max(1, (dv.getCurrentPage?.()||1)-1)),
         next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1)+1)),
