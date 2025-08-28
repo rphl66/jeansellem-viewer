@@ -127,4 +127,20 @@ body, .Text, .Button, .Header, .Panel, .Menu, .Popup, .Overlay, .Modal {
 .DocumentContainer .pageContainer + .pageContainer{
   margin-top: 0 !important;
 }
+/* --- iOS hairline fix: remove page shadow/border and force white bg --- */
+html, body, #app, .DocumentContainer { background:#fff !important; }
+
+.pageContainer,
+.pageContainer .shadow,
+.wv-page-shadow,
+.PageContainer,
+.PageContainer .shadow {
+  box-shadow: none !important;
+  filter: none !important;
+  border: 0 !important;
+}
+
+.pageContainer .shadow,
+.wv-page-shadow,
+.PageContainer .shadow { display:none !important; }
 
