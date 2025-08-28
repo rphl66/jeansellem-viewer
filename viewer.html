@@ -5,19 +5,29 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Viewer</title>
 
+  <!-- Skin facultatif -->
   <link rel="stylesheet" href="./pdfjs/viewer.css?v=28" />
   <style>
-    html, body { height:100%; margin:0; background:transparent; }
-    #viewer{
-      position:absolute; inset:0;
-      height:100dvh; height:100svh; height:100vh;
-      overscroll-behavior: contain; /* le scroll ne “déborde” pas sur la page parente */
+    /* remplace l'ancien style */
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: transparent; /* évite toute “bande” de fond */
+    }
+    /* le conteneur WebViewer remplit vraiment l'iframe */
+    #viewer {
+      position: absolute;
+      inset: 0;
+      height: 100dvh;  /* modernes */
+      height: 100svh;  /* iOS 15+ */
+      height: 100vh;   /* fallback */
     }
   </style>
 </head>
 <body>
   <div id="viewer"></div>
 
+  <!-- Librairie WebViewer (dossier /pdfjs) -->
   <script src="pdfjs/webviewer.min.js"></script>
   <script>
   (function(){
@@ -28,33 +38,26 @@
       path: 'pdfjs',
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
       css: 'https://rphl66.github.io/jeansellem-viewer/pdfjs/viewer.css?v=29',
-      initialDoc: file
+      initialDoc: file  // ← charge le PDF demandé
     }, document.getElementById('viewer')).then(instance => {
       const { UI, Core } = instance;
       const dv = Core.documentViewer;
 
-      // — UI minimal + CSS anti “feuilletage”
+      // Épure l’UI interne
       const KILL_CSS = `
-        [data-element="header"], #documentHeader, .Header, .Header *{
+        [data-element="header"], #documentHeader, .Header, .Header * {
           display:none!important; height:0!important; min-height:0!important;
           padding:0!important; border:0!important;
         }
         [data-element="toolsHeader"], [data-element="toolsOverlay"],
         .toolsHeader, .toolsOverlay { display:none!important; }
+
         [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
         .PageNavOverlay, .pageNavOverlay { display:none!important; }
 
-        /* fond + anti-inertie + suppression de tout snap */
-        .DocumentContainer{
-          background:#fff !important;
-          overscroll-behavior: contain;
-          -webkit-overflow-scrolling: auto;
-          scroll-snap-type: none !important;
-        }
-        .DocumentContainer *{
-          scroll-snap-align: none !important;
-        }
+        .DocumentContainer { background:#fff !important; }
       `;
+
       function injectCSSIntoUI(){
         const doc = UI.iframeWindow?.document;
         if (!doc || doc.querySelector('style[data-jsl-kill]')) return;
@@ -63,6 +66,7 @@
         s.textContent = KILL_CSS;
         doc.head.appendChild(s);
       }
+
       function hideInternalUI(){
         try {
           UI.setHeaderItems?.(h => { h.splice(0, h.length); });
@@ -74,36 +78,29 @@
             'leftPanelButton','shareButton','printButton','downloadButton','openFileButton',
             'languageButton','themeChangeButton','fullscreenButton','toolbarGroupButton'
           ]);
-          UI.closeElements?.(['toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay']);
+          UI.closeElements?.([
+            'toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay'
+          ]);
         } catch(_) {}
         injectCSSIntoUI();
       }
 
-      // — Forcer un défilement VERTICAL CONTINU (pas de flip)
-      function forceContinuous(){
-        try {
-          const LM = UI.LayoutMode || {};
-          UI.setLayoutMode?.(LM.Continuous ?? LM.CONTINUOUS ?? 'Continuous'); // ← IMPORTANT
-          const SM = UI.ScrollMode || {};
-          UI.setScrollMode?.(SM.Vertical ?? SM.Continuous ?? SM.CONTINUOUS ?? SM.VERTICAL ?? 0);
-          const PT = UI.PageTransitionMode || {};
-          UI.setPageTransitionMode?.(PT.None ?? PT.Default ?? 'Default');    // pas d’animation
-          // Choisis FitWidth si tu veux une lecture confortable :
-          UI.setFitMode?.(UI.FitMode?.FitWidth ?? 'FitWidth');
-        } catch(_) {}
-      }
-
-      // Initialisation
       hideInternalUI();
-      forceContinuous();
 
-      // Re-applique quand le doc/état change (certaines builds réinitialisent)
-      dv.addEventListener('documentLoaded',   () => { hideInternalUI(); forceContinuous(); });
-      dv.addEventListener('pagesUpdated',     forceContinuous);
-      dv.addEventListener('viewModeUpdated',  forceContinuous);
-      dv.addEventListener('fitModeUpdated',   forceContinuous);
+      const uiDoc = UI.iframeWindow?.document;
+      if (uiDoc) new MutationObserver(hideInternalUI)
+        .observe(uiDoc.documentElement, { childList:true, subtree:true });
 
-      // — Bridge commandes pour la barre externe
+      dv.addEventListener('documentLoaded', () => {
+        hideInternalUI();
+        try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(_) {}
+        try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(_) {}
+        try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(_) {}
+        try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_) {}
+        try { dv.setCurrentPage?.(1); } catch(_) {}
+      });
+
+      // Pont commandes depuis la toolbar externe
       const actions = {
         zin:   () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) * 1.1),
         zout:  () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) / 1.1),
@@ -112,10 +109,11 @@
         next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1)+1)),
         last:  () => dv.setCurrentPage?.(dv.getPageCount?.()||1),
       };
+
       window.addEventListener('message', (evt) => {
         const data = evt.data || {};
         if (data.type !== 'JSL_CMD' || !(data.act in actions)) return;
-        try { actions[data.act](); } catch(_){}
+        try { actions[data.act](); } catch(_) {}
         evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
       });
     });
