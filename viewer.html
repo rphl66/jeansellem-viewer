@@ -79,42 +79,29 @@
         injectCSSIntoUI();
       }
 
-      // — Forcer un défilement VERTICAL CONTINU sans transition (toutes versions)
-      function forceSmoothScrollModes(){
+      // — Forcer un défilement VERTICAL CONTINU (pas de flip)
+      function forceContinuous(){
         try {
-          // Layout
           const LM = UI.LayoutMode || {};
-          UI.setLayoutMode?.(LM.Single ?? LM.Continuous ?? 'Single');
-
-          // ScrollMode (différents noms selon versions)
+          UI.setLayoutMode?.(LM.Continuous ?? LM.CONTINUOUS ?? 'Continuous'); // ← IMPORTANT
           const SM = UI.ScrollMode || {};
-          const vertical =
-            SM.Vertical ?? SM.Continuous ?? SM.CONTINUOUS ?? SM.VERTICAL ?? 0; // 0 pour certaines builds
-          UI.setScrollMode?.(vertical);
-
-          // PageTransition (aucune animation)
+          UI.setScrollMode?.(SM.Vertical ?? SM.Continuous ?? SM.CONTINUOUS ?? SM.VERTICAL ?? 0);
           const PT = UI.PageTransitionMode || {};
-          UI.setPageTransitionMode?.(PT.None ?? PT.Default ?? 'Default');
-
-          // Zoom d’affichage (choisis FitPage ou FitWidth selon préférence)
-          UI.setFitMode?.(UI.FitMode?.FitPage ?? 'FitPage');
+          UI.setPageTransitionMode?.(PT.None ?? PT.Default ?? 'Default');    // pas d’animation
+          // Choisis FitWidth si tu veux une lecture confortable :
+          UI.setFitMode?.(UI.FitMode?.FitWidth ?? 'FitWidth');
         } catch(_) {}
       }
 
+      // Initialisation
       hideInternalUI();
-      const uiDoc = UI.iframeWindow?.document;
-      if (uiDoc) new MutationObserver(hideInternalUI)
-        .observe(uiDoc.documentElement, { childList:true, subtree:true });
+      forceContinuous();
 
-      // Appliquer au chargement et ré-appliquer si le viewer change d’état
-      dv.addEventListener('documentLoaded', () => {
-        hideInternalUI();
-        forceSmoothScrollModes();
-        try { dv.setCurrentPage?.(1); } catch(_){}
-      });
-      dv.addEventListener('pagesUpdated', forceSmoothScrollModes);
-      dv.addEventListener('fitModeUpdated', forceSmoothScrollModes);
-      dv.addEventListener('viewModeUpdated', forceSmoothScrollModes);
+      // Re-applique quand le doc/état change (certaines builds réinitialisent)
+      dv.addEventListener('documentLoaded',   () => { hideInternalUI(); forceContinuous(); });
+      dv.addEventListener('pagesUpdated',     forceContinuous);
+      dv.addEventListener('viewModeUpdated',  forceContinuous);
+      dv.addEventListener('fitModeUpdated',   forceContinuous);
 
       // — Bridge commandes pour la barre externe
       const actions = {
