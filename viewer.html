@@ -5,45 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Viewer</title>
 
-  <!-- (facultatif, ne sert qu’au parent) -->
-  <link rel="stylesheet" href="./pdfjs/viewer.css?v=27">
-
+  <!-- Skin (facultatif ici, mais utile si tu veux aussi styler la page hôte) -->
+  <link rel="stylesheet" href="./pdfjs/viewer.css?v=27" />
   <style>
     html,body { height:100%; margin:0 }
     #viewer   { height:100vh }
-
-    /* ===== Bouton flottant DEBUG (D) ===== */
-    #jsl-debug-toggle{
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      z-index: 2147483647;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      background: #ff00a8;
-      color: #fff;
-      font: 700 18px/40px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      text-align: center;
-      cursor: pointer;
-      box-shadow: 0 4px 18px rgba(0,0,0,.25);
-      user-select: none;
-    }
-
-    /* ===== Mode debug : bordures fluo sur TOUT le DOM parent ===== */
-    html.jsl-debug * {
-      outline: 2px solid #ff00a8 !important;
-      outline-offset: -1px !important;
-    }
   </style>
 </head>
 <body>
-  <!-- Conteneur du viewer WebViewer -->
+  <!-- Conteneur WebViewer -->
   <div id="viewer"></div>
 
-  <!-- Bouton flottant DEBUG -->
-  <div id="jsl-debug-toggle" title="Debug on/off">D</div>
-
-  <!-- Librairie WebViewer (fichiers présents dans /pdfjs) -->
+  <!-- Librairie WebViewer (dans /pdfjs) -->
   <script src="pdfjs/webviewer.min.js"></script>
 
   <script>
@@ -54,13 +27,13 @@
     WebViewer({
       path: 'pdfjs',
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      // CSS injecté DANS l’UI interne (iframe du viewer)
+      /* CSS injecté dans l’UI interne du viewer */
       css: 'https://rphl66.github.io/jeansellem-viewer/pdfjs/viewer.css?v=27'
     }, document.getElementById('viewer')).then(instance => {
       const { UI, Core } = instance;
       const dv = Core.documentViewer;
 
-      /* ---------- Masquer/épurer l’UI interne ---------- */
+      /* --- Épurer l’UI interne (masquer l’en-tête, etc.) --- */
       const KILL_CSS = `
         [data-element="header"], #documentHeader, .Header, .Header *{
           display:none!important; height:0!important; min-height:0!important;
@@ -72,7 +45,6 @@
         .PageNavOverlay, .pageNavOverlay { display:none!important; }
         .DocumentContainer { background:#fff !important; }
       `;
-
       function injectCSSIntoUI(){
         const doc = UI.iframeWindow?.document;
         if (!doc || doc.querySelector('style[data-jsl-kill]')) return;
@@ -81,7 +53,6 @@
         s.textContent = KILL_CSS;
         doc.head.appendChild(s);
       }
-
       function hideInternalUI(){
         try {
           UI.setHeaderItems?.(h => { h.splice(0, h.length); });
@@ -95,18 +66,18 @@
             'languageButton','themeChangeButton','fullscreenButton','toolbarGroupButton'
           ]);
           UI.closeElements?.(['toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay']);
-        } catch(_){}
+        } catch(_) {}
         injectCSSIntoUI();
       }
-
       hideInternalUI();
+
       const uiDoc = UI.iframeWindow?.document;
       if (uiDoc) {
         new MutationObserver(hideInternalUI)
           .observe(uiDoc.documentElement, { childList:true, subtree:true });
       }
 
-      /* ---------- Réglages d’affichage ---------- */
+      /* --- Réglages d’affichage --- */
       let ready = false, queue = [];
       dv.addEventListener('documentLoaded', () => {
         hideInternalUI();
@@ -119,7 +90,7 @@
         while (queue.length) run(queue.shift());
       });
 
-      /* ---------- Pont pour barre EXTERNE (postMessage) ---------- */
+      /* --- Pont commandes -> depuis la barre EXTERNE (postMessage) --- */
       function getZoom(){ return (UI.getZoomLevel?.() ?? dv.getZoomLevel?.() ?? 1); }
       function setZoom(level){
         if (UI.setZoomLevel) UI.setZoomLevel(level);
@@ -146,16 +117,6 @@
         evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
       });
     });
-
-    /* ---------- Bouton flottant DEBUG : toggle .jsl-debug sur <html> ---------- */
-    (function(){
-      const btn = document.getElementById('jsl-debug-toggle');
-      if (!btn) return;
-      btn.addEventListener('click', ()=>{
-        document.documentElement.classList.toggle('jsl-debug');
-      });
-    })();
-
   })();
   </script>
 </body>
