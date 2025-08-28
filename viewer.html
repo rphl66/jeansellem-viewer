@@ -8,11 +8,10 @@
   <link rel="stylesheet" href="./pdfjs/viewer.css?v=28" />
   <style>
     html, body { height:100%; margin:0; background:transparent; }
-    /* Le conteneur remplit vraiment l’iframe et isole le scroll */
     #viewer{
       position:absolute; inset:0;
       height:100dvh; height:100svh; height:100vh;
-      overscroll-behavior: contain;
+      overscroll-behavior: contain; /* le scroll ne “déborde” pas sur la page parente */
     }
   </style>
 </head>
@@ -34,7 +33,7 @@
       const { UI, Core } = instance;
       const dv = Core.documentViewer;
 
-      // — Nettoyage UI interne + anti "feuilletage"
+      // — UI minimal + CSS anti “feuilletage”
       const KILL_CSS = `
         [data-element="header"], #documentHeader, .Header, .Header *{
           display:none!important; height:0!important; min-height:0!important;
@@ -45,7 +44,7 @@
         [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
         .PageNavOverlay, .pageNavOverlay { display:none!important; }
 
-        /* Fond blanc + anti-inertie + aucun snap */
+        /* fond + anti-inertie + suppression de tout snap */
         .DocumentContainer{
           background:#fff !important;
           overscroll-behavior: contain;
@@ -79,30 +78,45 @@
         } catch(_) {}
         injectCSSIntoUI();
       }
-      hideInternalUI();
 
+      // — Forcer un défilement VERTICAL CONTINU sans transition (toutes versions)
+      function forceSmoothScrollModes(){
+        try {
+          // Layout
+          const LM = UI.LayoutMode || {};
+          UI.setLayoutMode?.(LM.Single ?? LM.Continuous ?? 'Single');
+
+          // ScrollMode (différents noms selon versions)
+          const SM = UI.ScrollMode || {};
+          const vertical =
+            SM.Vertical ?? SM.Continuous ?? SM.CONTINUOUS ?? SM.VERTICAL ?? 0; // 0 pour certaines builds
+          UI.setScrollMode?.(vertical);
+
+          // PageTransition (aucune animation)
+          const PT = UI.PageTransitionMode || {};
+          UI.setPageTransitionMode?.(PT.None ?? PT.Default ?? 'Default');
+
+          // Zoom d’affichage (choisis FitPage ou FitWidth selon préférence)
+          UI.setFitMode?.(UI.FitMode?.FitPage ?? 'FitPage');
+        } catch(_) {}
+      }
+
+      hideInternalUI();
       const uiDoc = UI.iframeWindow?.document;
       if (uiDoc) new MutationObserver(hideInternalUI)
         .observe(uiDoc.documentElement, { childList:true, subtree:true });
 
-      // — Réglages anti-feuilletage (conservant les liens internes)
-      function setSmoothScrollModes(){
-        try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(_){}
-        try { UI.setScrollMode?.(UI.ScrollMode.CONTINUOUS); } catch(_){}
-        try { UI.setPageTransitionMode?.(UI.PageTransitionMode.None); } catch(_){}
-        try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_){}
-      }
-
+      // Appliquer au chargement et ré-appliquer si le viewer change d’état
       dv.addEventListener('documentLoaded', () => {
         hideInternalUI();
-        setSmoothScrollModes();
+        forceSmoothScrollModes();
         try { dv.setCurrentPage?.(1); } catch(_){}
       });
+      dv.addEventListener('pagesUpdated', forceSmoothScrollModes);
+      dv.addEventListener('fitModeUpdated', forceSmoothScrollModes);
+      dv.addEventListener('viewModeUpdated', forceSmoothScrollModes);
 
-      // — Re-applique si l’utilisateur change un réglage via API interne
-      dv.addEventListener('pagesUpdated', setSmoothScrollModes);
-
-      // — Bridge commandes depuis la toolbar externe
+      // — Bridge commandes pour la barre externe
       const actions = {
         zin:   () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) * 1.1),
         zout:  () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) / 1.1),
