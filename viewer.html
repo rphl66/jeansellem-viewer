@@ -5,20 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Viewer</title>
 
-  <!-- Skin (facultatif ici, mais utile si tu veux aussi styler la page hôte) -->
-  <link rel="stylesheet" href="./pdfjs/viewer.css?v=27" />
+  <!-- Skin facultatif -->
+  <link rel="stylesheet" href="./pdfjs/viewer.css?v=28" />
   <style>
     html,body { height:100%; margin:0 }
     #viewer   { height:100vh }
   </style>
 </head>
 <body>
-  <!-- Conteneur WebViewer -->
   <div id="viewer"></div>
 
-  <!-- Librairie WebViewer (dans /pdfjs) -->
+  <!-- Librairie WebViewer (dossier /pdfjs) -->
   <script src="pdfjs/webviewer.min.js"></script>
-
   <script>
   (function(){
     const params = new URLSearchParams(location.search);
@@ -27,13 +25,13 @@
     WebViewer({
       path: 'pdfjs',
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      /* CSS injecté dans l’UI interne du viewer */
-      css: 'https://rphl66.github.io/jeansellem-viewer/pdfjs/viewer.css?v=27'
+      css: 'https://rphl66.github.io/jeansellem-viewer/pdfjs/viewer.css?v=28',
+      initialDoc: file                 // ← ← ← IMPORTANT : charge le PDF demandé
     }, document.getElementById('viewer')).then(instance => {
       const { UI, Core } = instance;
       const dv = Core.documentViewer;
 
-      /* --- Épurer l’UI interne (masquer l’en-tête, etc.) --- */
+      // Épure l’UI interne
       const KILL_CSS = `
         [data-element="header"], #documentHeader, .Header, .Header *{
           display:none!important; height:0!important; min-height:0!important;
@@ -48,18 +46,15 @@
       function injectCSSIntoUI(){
         const doc = UI.iframeWindow?.document;
         if (!doc || doc.querySelector('style[data-jsl-kill]')) return;
-        const s = doc.createElement('style');
-        s.setAttribute('data-jsl-kill','');
-        s.textContent = KILL_CSS;
-        doc.head.appendChild(s);
+        const s = doc.createElement('style'); s.setAttribute('data-jsl-kill','');
+        s.textContent = KILL_CSS; doc.head.appendChild(s);
       }
       function hideInternalUI(){
         try {
           UI.setHeaderItems?.(h => { h.splice(0, h.length); });
           UI.updateElement?.('header', { hidden:true, disabled:true });
           UI.disableElements?.([
-            'toolsHeader','toolsOverlay',
-            'pageNavOverlay','pageNavigationOverlay',
+            'toolsHeader','toolsOverlay','pageNavOverlay','pageNavigationOverlay',
             'ribbonsDropdownButton','menuButton','settingsButton','searchButton',
             'notesPanel','notesPanelButton','toggleNotesButton','toggleNotesPanelButton',
             'leftPanelButton','shareButton','printButton','downloadButton','openFileButton',
@@ -72,13 +67,9 @@
       hideInternalUI();
 
       const uiDoc = UI.iframeWindow?.document;
-      if (uiDoc) {
-        new MutationObserver(hideInternalUI)
-          .observe(uiDoc.documentElement, { childList:true, subtree:true });
-      }
+      if (uiDoc) new MutationObserver(hideInternalUI)
+        .observe(uiDoc.documentElement, { childList:true, subtree:true });
 
-      /* --- Réglages d’affichage --- */
-      let ready = false, queue = [];
       dv.addEventListener('documentLoaded', () => {
         hideInternalUI();
         try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(_){}
@@ -86,34 +77,21 @@
         try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(_){}
         try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(_){}
         try { dv.setCurrentPage?.(1); } catch(_){}
-        ready = true;
-        while (queue.length) run(queue.shift());
       });
 
-      /* --- Pont commandes -> depuis la barre EXTERNE (postMessage) --- */
-      function getZoom(){ return (UI.getZoomLevel?.() ?? dv.getZoomLevel?.() ?? 1); }
-      function setZoom(level){
-        if (UI.setZoomLevel) UI.setZoomLevel(level);
-        else if (dv.setZoomLevel) dv.setZoomLevel(level);
-        else if (dv.zoomTo) dv.zoomTo(level);
-      }
-      function zoomIn(){  setZoom(Math.min(getZoom() * 1.1, 10)); }
-      function zoomOut(){ setZoom(Math.max(getZoom() / 1.1, 0.05)); }
-
+      // Pont commandes depuis la toolbar externe
       const actions = {
-        zin:   zoomIn,
-        zout:  zoomOut,
+        zin:  () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) * 1.1),
+        zout: () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) / 1.1),
         first: () => dv.setCurrentPage?.(1),
-        prev:  () => dv.setCurrentPage?.(Math.max(1, (dv.getCurrentPage?.()||1) - 1)),
-        next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1) + 1)),
-        last:  () => dv.setCurrentPage?.(dv.getPageCount?.()||1)
+        prev:  () => dv.setCurrentPage?.(Math.max(1, (dv.getCurrentPage?.()||1)-1)),
+        next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1)+1)),
+        last:  () => dv.setCurrentPage?.(dv.getPageCount?.()||1),
       };
-      function run(act){ try{ actions[act]?.(); } catch(_){} }
-
       window.addEventListener('message', (evt) => {
         const data = evt.data || {};
         if (data.type !== 'JSL_CMD' || !(data.act in actions)) return;
-        if (!ready) queue.push(data.act); else run(data.act);
+        try { actions[data.act](); } catch(_){}
         evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
       });
     });
