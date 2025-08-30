@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+# Enregistre le fichier HTML corrigé avec le CSS ajusté pour le viewer
+html_content = """<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -8,19 +9,20 @@
   <!-- Skin facultatif -->
   <link rel="stylesheet" href="./pdfjs/viewer.css?v=28" />
   <style>
-    /* remplace l'ancien style */
     html, body {
       height: 100%;
       margin: 0;
-      background: transparent; /* évite toute “bande” de fond */
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
     }
-    /* le conteneur WebViewer remplit vraiment l'iframe */
+
     #viewer {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  max-height: 100%;
-}
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -37,12 +39,11 @@
       path: 'pdfjs',
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
       css: 'https://rphl66.github.io/jeansellem-viewer/pdfjs/viewer.css?v=29',
-      initialDoc: file  // ← charge le PDF demandé
+      initialDoc: file
     }, document.getElementById('viewer')).then(instance => {
       const { UI, Core } = instance;
       const dv = Core.documentViewer;
 
-      // Épure l’UI interne
       const KILL_CSS = `
         [data-element="header"], #documentHeader, .Header, .Header * {
           display:none!important; height:0!important; min-height:0!important;
@@ -99,7 +100,6 @@
         try { dv.setCurrentPage?.(1); } catch(_) {}
       });
 
-      // Pont commandes depuis la toolbar externe
       const actions = {
         zin:   () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) * 1.1),
         zout:  () => UI.setZoomLevel?.((UI.getZoomLevel?.() ?? 1) / 1.1),
@@ -120,3 +120,10 @@
   </script>
 </body>
 </html>
+"""
+
+file_path = "/mnt/data/viewer-corrected.html"
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+file_path
