@@ -6,7 +6,7 @@
   <title>Viewer</title>
 
   <!-- Skin facultatif -->
-  <link rel="stylesheet" href="pdfjs/viewer.css?v=30" />
+  <link rel="stylesheet" href="pdfjs/viewer.css?v=31" />
 
   <style>
     /* L’iframe occupe 100% : pas d’unités vh ici */
@@ -33,7 +33,7 @@
     WebViewer({
       path: 'pdfjs',
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      css: 'pdfjs/viewer.css?v=30',
+      css: 'pdfjs/viewer.css?v=31',
       initialDoc: file
     }, document.getElementById('viewer')).then(instance => {
       const { UI, Core } = instance;
@@ -88,15 +88,15 @@
           .observe(uiDoc.documentElement, { childList:true, subtree:true });
       }catch(_){}
 
-      // Quand un PDF est chargé → fit page + petit re-fit
+      // Quand un PDF est chargé → FitWidth + petit re-fit
       dv.addEventListener('documentLoaded', () => {
         hideInternalUI();
-        try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(_) {}
-        try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(_) {}
-        try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(_) {}
-        try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_) {}
-        try { dv.setCurrentPage?.(1); } catch(_) {}
-        setTimeout(() => { try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_){} }, 50);
+        try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(_){}
+        try { UI.setScrollMode?.(UI.ScrollMode.PAGE); } catch(_){}
+        try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(_){}
+        try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(_){}
+        try { dv.setCurrentPage?.(1); } catch(_){}
+        setTimeout(() => { try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(_){} }, 50);
       });
 
       // Commandes reçues depuis la page parente
@@ -108,17 +108,18 @@
         next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1)+1)),
         last:  () => dv.setCurrentPage?.(dv.getPageCount?.()||1),
 
-        // 👇 nouvelles actions utiles
         fitp:  () => UI.setFitMode?.(UI.FitMode.FitPage),
         fitw:  () => UI.setFitMode?.(UI.FitMode.FitWidth),
+
+        // Refit complet quand la popup s’ouvre
         refresh: () => {
           try {
             UI.resize?.();
             dv.refreshAll?.();
             dv.updateView?.();
-            UI.setFitMode?.(UI.FitMode.FitPage);
+            UI.setFitMode?.(UI.FitMode.FitWidth);
           } catch(_) {}
-          setTimeout(() => { try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_){} }, 30);
+          setTimeout(() => { try { UI.setFitMode?.(UI.FitMode.FitWidth); } catch(_){} }, 30);
         },
       };
 
