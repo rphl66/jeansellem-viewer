@@ -6,7 +6,7 @@
   <title>Viewer</title>
 
   <!-- Skin facultatif -->
-  <link rel="stylesheet" href="pdfjs/viewer.css?v=29" />
+  <link rel="stylesheet" href="pdfjs/viewer.css?v=30" />
 
   <style>
     /* L’iframe occupe 100% : pas d’unités vh ici */
@@ -33,7 +33,7 @@
     WebViewer({
       path: 'pdfjs',
       licenseKey: 'WQbdx5KD5SbQkjFwosWR',
-      css: 'pdfjs/viewer.css?v=29',
+      css: 'pdfjs/viewer.css?v=30',
       initialDoc: file
     }, document.getElementById('viewer')).then(instance => {
       const { UI, Core } = instance;
@@ -88,6 +88,7 @@
           .observe(uiDoc.documentElement, { childList:true, subtree:true });
       }catch(_){}
 
+      // Quand un PDF est chargé → fit page + petit re-fit
       dv.addEventListener('documentLoaded', () => {
         hideInternalUI();
         try { UI.setLayoutMode?.(UI.LayoutMode.Single); } catch(_) {}
@@ -95,6 +96,7 @@
         try { UI.setPageTransitionMode?.(UI.PageTransitionMode.Page); } catch(_) {}
         try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_) {}
         try { dv.setCurrentPage?.(1); } catch(_) {}
+        setTimeout(() => { try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_){} }, 50);
       });
 
       // Commandes reçues depuis la page parente
@@ -105,26 +107,28 @@
         prev:  () => dv.setCurrentPage?.(Math.max(1, (dv.getCurrentPage?.()||1)-1)),
         next:  () => dv.setCurrentPage?.(Math.min(dv.getPageCount?.()||1, (dv.getCurrentPage?.()||1)+1)),
         last:  () => dv.setCurrentPage?.(dv.getPageCount?.()||1),
-      };
 
-      window.addEventListener('message', (evt) => {
-        const data = evt.data || {};
-        if (data.type !== 'JSL_CMD') return;
-
-        // Re-layout quand le viewer vient d'être montré/déplacé (popup mobile)
-        if (data.act === 'refresh'){
+        // 👇 nouvelles actions utiles
+        fitp:  () => UI.setFitMode?.(UI.FitMode.FitPage),
+        fitw:  () => UI.setFitMode?.(UI.FitMode.FitWidth),
+        refresh: () => {
           try {
             UI.resize?.();
             dv.refreshAll?.();
             dv.updateView?.();
             UI.setFitMode?.(UI.FitMode.FitPage);
           } catch(_) {}
-          return;
-        }
+          setTimeout(() => { try { UI.setFitMode?.(UI.FitMode.FitPage); } catch(_){} }, 30);
+        },
+      };
 
-        if (!(data.act in actions)) return;
-        try { actions[data.act](); } catch(_) {}
-        evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
+      window.addEventListener('message', (evt) => {
+        const data = evt.data || {};
+        if (data.type !== 'JSL_CMD') return;
+        if (data.act in actions) {
+          try { actions[data.act](); } catch(_) {}
+          evt.source?.postMessage({ type:'JSL_ACK', act:data.act }, evt.origin);
+        }
       });
 
       // Ajuste aussi lors des rotations / resize
