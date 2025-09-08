@@ -47,34 +47,28 @@
       /* CSS injecté dans l'UI interne pour supprimer barres natives
          et poser la couleur de fond partout autour des pages */
       const KILL_CSS = `
-        :root { --viewer-bg: ${bg}; }
+  [data-element="header"], #documentHeader, .Header, .Header * {
+    display:none!important; height:0!important; min-height:0!important;
+    padding:0!important; border:0!important;
+  }
+  [data-element="toolsHeader"], [data-element="toolsOverlay"],
+  .toolsHeader, .toolsOverlay { display:none!important; }
+  [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
+  .PageNavOverlay, .pageNavOverlay { display:none!important; }
 
-        /* Fond général du viewer interne */
-        html, body, #app, .App {
-          background: var(--viewer-bg) !important;
-        }
+  /* Fond interne du document */
+  .DocumentContainer { background:#f7f7f7 !important; }
 
-        /* Conteneurs autour des pages (noms varient selon versions) */
-        .DocumentContainer, .documentContainer,
-        .PageContainer, .pageContainer,
-        .canvasContainer, .pageContainer .page {
-          background: var(--viewer-bg) !important;
-        }
-
-        /* Optionnel : supprime l'ombre autour des pages */
-        .pageContainer { box-shadow: none !important; }
-
-        /* Masque les toolbars natives */
-        [data-element="header"], #documentHeader, .Header, .Header * {
-          display: none !important; height: 0 !important; min-height: 0 !important;
-          padding: 0 !important; border: 0 !important;
-        }
-        [data-element="toolsHeader"], [data-element="toolsOverlay"],
-        .toolsHeader, .toolsOverlay { display: none !important; }
-
-        [data-element="pageNavOverlay"], [data-element="pageNavigationOverlay"],
-        .PageNavOverlay, .pageNavOverlay { display: none !important; }
-      `;
+  /* 🔒 Masquer TOUTES les barres de scroll du viewer */
+  html, body, .DocumentContainer, .PageContainer, .ScrollView, .ui__content, .ui__layout {
+    scrollbar-width: none !important;        /* Firefox */
+    overscroll-behavior: contain;
+  }
+  html *::-webkit-scrollbar {
+    width: 0 !important;                     /* Chrome/Safari/Edge */
+    height: 0 !important;
+  }
+`;
 
       function injectCSSIntoUI() {
         try {
